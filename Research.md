@@ -29,7 +29,8 @@ The problem statement addresses **five interconnected challenges**:
                        │
                        ↓
            REMOTE / LOW-CONNECTIVITY NER
-
+```
+         
 ## 🎯 Core Problem
 
 The problem is **not simply that elderly people need cognitive games**.
