@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/app_strings.dart';
 import 'package:mobile/core/navigation/app_routes.dart';
+import 'package:mobile/screens/ai_processing/domain_overview_screen.dart';
 import 'package:mobile/screens/language/language_selection_screen.dart';
 import 'package:mobile/screens/onboarding/caregiver_onboarding_screen.dart';
 import 'package:mobile/screens/role/role_selection_screen.dart';
@@ -75,5 +76,22 @@ void main() {
     expect(find.text('Step 2 of 5'), findsOneWidget);
     expect(find.text('Comfort & Support Needs'), findsOneWidget);
     expect(find.text('I am unsure right now'), findsWidgets);
+  });
+
+  testWidgets('Domain overview screen displays all 6 domains', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DomainOverviewScreen(),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Six Cognitive Domains'), findsOneWidget);
+    expect(find.text('Remember'), findsOneWidget);
+    expect(find.text('Notice'), findsOneWidget);
+    expect(find.text('Talk & Share'), findsOneWidget);
+    expect(find.text('Plan & Sort'), findsOneWidget);
+    expect(find.text('Today & Places'), findsOneWidget);
+    expect(find.text('Explore & Match'), findsOneWidget);
   });
 }
