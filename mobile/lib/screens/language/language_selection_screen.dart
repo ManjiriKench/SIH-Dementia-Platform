@@ -54,7 +54,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundWarm,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,76 +78,70 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                 'Select the language most comfortable for listening and reading.',
                 style: AppTypography.caregiverBody,
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               // Language List
-              Expanded(
-                child: ListView.separated(
-                  itemCount: _languages.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final item = _languages[index];
-                    final isSelected = _selectedLang == item['code'];
+              ...List.generate(_languages.length, (index) {
+                final item = _languages[index];
+                final isSelected = _selectedLang == item['code'];
 
-                    return CalmCard(
-                      backgroundColor: isSelected ? AppColors.surfaceWarm : Colors.white,
-                      borderColor: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
-                      borderWidth: isSelected ? 2.4 : 1.2,
-                      padding: const EdgeInsets.all(18),
-                      onTap: () => _onLanguageSelected(item['code']!),
-                      child: Row(
-                        children: [
-                          // Selection Indicator
-                          Icon(
-                            isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                            size: 28,
-                            color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14.0),
+                  child: CalmCard(
+                    backgroundColor: isSelected ? AppColors.surfaceWarm : Colors.white,
+                    borderColor: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
+                    borderWidth: isSelected ? 2.4 : 1.2,
+                    padding: const EdgeInsets.all(18),
+                    onTap: () => _onLanguageSelected(item['code']!),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                          size: 28,
+                          color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item['nativeName']!,
+                                style: AppTypography.patientTitle.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 22,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                item['region']!,
+                                style: AppTypography.caregiverCaption.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          // Language Names
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['nativeName']!,
-                                  style: AppTypography.patientTitle.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 22,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  item['region']!,
-                                  style: AppTypography.caregiverCaption.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Listen Sample Button
-                          Material(
-                            color: isSelected ? AppColors.forestPrimary : AppColors.surfaceWarm,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: () => _playSample(item['sampleGreeting']!),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Icon(
-                                  Icons.volume_up,
-                                  size: 24,
-                                  color: isSelected ? Colors.white : AppColors.forestPrimary,
-                                ),
+                        ),
+                        Material(
+                          color: isSelected ? AppColors.forestPrimary : AppColors.surfaceWarm,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => _playSample(item['sampleGreeting']!),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Icon(
+                                Icons.volume_up,
+                                size: 24,
+                                color: isSelected ? Colors.white : AppColors.forestPrimary,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
               const SizedBox(height: 16),
               // Continue Button
               ElderButton(

@@ -170,7 +170,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundWarm,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -315,7 +315,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               // Language switch shortcut
               TextButton.icon(
                 icon: const Icon(Icons.language, size: 20, color: AppColors.forestPrimary),

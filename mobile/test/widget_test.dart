@@ -1,30 +1,55 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:mobile/main.dart';
+import 'package:mobile/core/constants/app_strings.dart';
+import 'package:mobile/core/navigation/app_routes.dart';
+import 'package:mobile/screens/language/language_selection_screen.dart';
+import 'package:mobile/screens/role/role_selection_screen.dart';
+import 'package:mobile/screens/splash/splash_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Splash screen displays branding and offline badge', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const SplashScreen(),
+        routes: {
+          AppRoutes.language: (context) => const Scaffold(),
+        },
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pump();
+    expect(find.text(AppStrings.get('app_title')), findsOneWidget);
+    expect(find.byIcon(Icons.spa), findsOneWidget);
+    expect(find.text('Works 100% Offline • Private & Safe'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Drain timer to complete navigation
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('Language selection screen displays all 3 languages', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LanguageSelectionScreen(),
+      ),
+    );
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Choose Your Language'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('हिंदी'), findsOneWidget);
+    expect(find.text('অসমীয়া'), findsOneWidget);
+  });
+
+  testWidgets('Role selection screen shows Caregiver and Patient entries', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: RoleSelectionScreen(),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(AppStrings.get('role_caregiver')), findsOneWidget);
+    expect(find.text(AppStrings.get('role_patient')), findsOneWidget);
+    expect(find.text('Plain-Language Privacy & Zero Medical Claims Notice'), findsOneWidget);
   });
 }

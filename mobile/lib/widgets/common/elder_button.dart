@@ -103,7 +103,6 @@ class ElderButton extends StatelessWidget {
       width: isFullWidth ? double.infinity : null,
       child: Material(
         color: onPressed == null ? AppColors.borderSoft : bg,
-        borderRadius: BorderRadius.circular(18),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
           side: border,
