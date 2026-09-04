@@ -1,63 +1,41 @@
 import 'package:flutter/material.dart';
-import 'services/api_service.dart';
+import 'core/constants/app_strings.dart';
+import 'core/navigation/app_routes.dart';
+import 'core/theme/app_theme.dart';
+import 'screens/ai_processing/ai_processing_screen.dart';
+import 'screens/ai_processing/domain_overview_screen.dart';
+import 'screens/backend_test/backend_test_screen.dart';
+import 'screens/journey/todays_journey_screen.dart';
+import 'screens/language/language_selection_screen.dart';
+import 'screens/onboarding/caregiver_onboarding_screen.dart';
+import 'screens/role/role_selection_screen.dart';
+import 'screens/splash/splash_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const DementiaAssistApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class DementiaAssistApp extends StatelessWidget {
+  const DementiaAssistApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Dementia Assist',
       debugShowCheckedModeBanner: false,
-      home: const BackendTestScreen(),
-    );
-  }
-}
-
-class BackendTestScreen extends StatefulWidget {
-  const BackendTestScreen({super.key});
-
-  @override
-  State<BackendTestScreen> createState() => _BackendTestScreenState();
-}
-
-class _BackendTestScreenState extends State<BackendTestScreen> {
-  String message = 'Testing backend...';
-
-  @override
-  void initState() {
-    super.initState();
-    testConnection();
-  }
-
-  Future<void> testConnection() async {
-    final result = await ApiService.testBackend();
-
-    if (!mounted) return;
-
-    setState(() {
-      message = result;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dementia Assist'),
-      ),
-      body: Center(
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 22,
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      initialRoute: AppRoutes.splash,
+      routes: {
+        AppRoutes.splash: (context) => const SplashScreen(),
+        AppRoutes.language: (context) => const LanguageSelectionScreen(),
+        AppRoutes.roleSelection: (context) => const RoleSelectionScreen(),
+        AppRoutes.caregiverOnboarding: (context) => const CaregiverOnboardingScreen(),
+        AppRoutes.aiProcessing: (context) => const AiProcessingScreen(),
+        AppRoutes.domainOverview: (context) => const DomainOverviewScreen(),
+        AppRoutes.todaysJourney: (context) => const TodaysJourneyScreen(),
+        '/backend_test': (context) => const BackendTestScreen(),
+      },
     );
   }
 }
