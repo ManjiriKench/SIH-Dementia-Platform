@@ -4,6 +4,7 @@ import 'core/navigation/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/backend_test/backend_test_screen.dart';
 import 'screens/language/language_selection_screen.dart';
+import 'screens/onboarding/caregiver_onboarding_screen.dart';
 import 'screens/role/role_selection_screen.dart';
 import 'screens/splash/splash_screen.dart';
 
@@ -26,6 +27,7 @@ class DementiaAssistApp extends StatelessWidget {
         AppRoutes.splash: (context) => const SplashScreen(),
         AppRoutes.language: (context) => const LanguageSelectionScreen(),
         AppRoutes.roleSelection: (context) => const RoleSelectionScreen(),
+        AppRoutes.caregiverOnboarding: (context) => const CaregiverOnboardingScreen(),
         '/backend_test': (context) => const BackendTestScreen(),
       },
     );

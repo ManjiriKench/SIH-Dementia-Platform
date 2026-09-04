@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/app_strings.dart';
 import 'package:mobile/core/navigation/app_routes.dart';
 import 'package:mobile/screens/language/language_selection_screen.dart';
+import 'package:mobile/screens/onboarding/caregiver_onboarding_screen.dart';
 import 'package:mobile/screens/role/role_selection_screen.dart';
 import 'package:mobile/screens/splash/splash_screen.dart';
 
@@ -51,5 +52,28 @@ void main() {
     expect(find.text(AppStrings.get('role_caregiver')), findsOneWidget);
     expect(find.text(AppStrings.get('role_patient')), findsOneWidget);
     expect(find.text('Plain-Language Privacy & Zero Medical Claims Notice'), findsOneWidget);
+  });
+
+  testWidgets('Caregiver onboarding screen renders Step 1 and advances to Step 2', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CaregiverOnboardingScreen(),
+      ),
+    );
+    await tester.pump();
+
+    // Verify Step 1 content
+    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('Who are we caring for?'), findsOneWidget);
+    expect(find.text('Preferred Name or Warm Greeting'), findsOneWidget);
+
+    // Tap Next Step to go to Step 2
+    await tester.tap(find.text('Next Step'));
+    await tester.pump();
+
+    // Verify Step 2 content with "I am unsure" options
+    expect(find.text('Step 2 of 5'), findsOneWidget);
+    expect(find.text('Comfort & Support Needs'), findsOneWidget);
+    expect(find.text('I am unsure right now'), findsWidgets);
   });
 }
