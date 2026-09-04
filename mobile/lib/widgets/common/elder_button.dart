@@ -98,9 +98,11 @@ class ElderButton extends StatelessWidget {
       ],
     );
 
-    return SizedBox(
-      height: height,
-      width: isFullWidth ? double.infinity : null,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: height,
+        minWidth: isFullWidth ? double.infinity : 0,
+      ),
       child: Material(
         color: onPressed == null ? AppColors.borderSoft : bg,
         shape: RoundedRectangleBorder(
@@ -114,7 +116,7 @@ class ElderButton extends StatelessWidget {
           splashColor: fg.withValues(alpha: 0.12),
           highlightColor: fg.withValues(alpha: 0.08),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: buttonContent,
           ),
         ),

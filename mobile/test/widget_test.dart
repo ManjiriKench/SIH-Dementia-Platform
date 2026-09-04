@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/app_strings.dart';
 import 'package:mobile/core/navigation/app_routes.dart';
 import 'package:mobile/screens/ai_processing/domain_overview_screen.dart';
+import 'package:mobile/screens/journey/todays_journey_screen.dart';
 import 'package:mobile/screens/language/language_selection_screen.dart';
 import 'package:mobile/screens/onboarding/caregiver_onboarding_screen.dart';
 import 'package:mobile/screens/role/role_selection_screen.dart';
@@ -93,5 +94,19 @@ void main() {
     expect(find.text('Plan & Sort'), findsOneWidget);
     expect(find.text('Today & Places'), findsOneWidget);
     expect(find.text('Explore & Match'), findsOneWidget);
+  });
+
+  testWidgets('Todays Journey screen renders garden path and activities', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TodaysJourneyScreen(),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(AppStrings.get('todays_journey')), findsOneWidget);
+    expect(find.text('Is a caregiver with you right now?'), findsOneWidget);
+    expect(find.text(AppStrings.get('yes_together')), findsOneWidget);
+    expect(find.text(AppStrings.get('no_independent')), findsOneWidget);
   });
 }

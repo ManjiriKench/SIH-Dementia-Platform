@@ -380,47 +380,31 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
         const SizedBox(height: 22),
         // Preferred Language
         const Text('Primary Language for Activities', style: AppTypography.caregiverSubheading),
-        const SizedBox(height: 10),
-        Row(
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
           children: [
-            _buildLangPill('en', 'English'),
-            const SizedBox(width: 10),
-            _buildLangPill('hi', 'हिंदी (Hindi)'),
-            const SizedBox(width: 10),
-            _buildLangPill('as', 'অসমীয়া (Assamese)'),
-          ],
+            {'code': 'en', 'label': 'English'},
+            {'code': 'hi', 'label': 'हिंदी (Hindi)'},
+            {'code': 'as', 'label': 'অসমীয়া (Assamese)'},
+          ].map((lang) {
+            final isSelected = _preferredLanguage == lang['code'];
+            return ChoiceChip(
+              label: Text(lang['label']!),
+              selected: isSelected,
+              selectedColor: AppColors.forestPrimary,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 14,
+              ),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onSelected: (_) => setState(() => _preferredLanguage = lang['code']!),
+            );
+          }).toList(),
         ),
       ],
-    );
-  }
-
-  Widget _buildLangPill(String code, String label) {
-    final isSelected = _preferredLanguage == code;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _preferredLanguage = code),
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.forestPrimary : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
-              width: 1.4,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: isSelected ? Colors.white : AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
     );
   }
 
