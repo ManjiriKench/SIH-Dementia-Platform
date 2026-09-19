@@ -28,4 +28,18 @@ class ApiService {
       return 'Connection failed: $e';
     }
   }
+
+  static Future<Map<String, dynamic>?> syncSessionTelemetry(Map<String, dynamic> telemetry) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/ai/sync-session'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(telemetry),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (_) {}
+    return null;
+  }
 }

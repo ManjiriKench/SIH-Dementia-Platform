@@ -1,0 +1,88 @@
+{
+  "session_id": "SESS_0001_HIGH_PERFORMER",
+  "patient_id": "PAT_001_ASHA",
+  "cohort": "Consistent_High_Functioning",
+  "timestamp": "2026-09-16 09:30:00",
+  "time_of_day": "Morning",
+  "domain": "Memory",
+  "game_id": "act_mem_face_recall",
+  "interaction_mode": "Cognitive_Together",
+  "assigned_difficulty": 2,
+  "rounds_completed": 8,
+  "accuracy": 0.9,
+  "avg_response_time_ms": 1850,
+  "hint_count": 0,
+  "error_streak_max": 1,
+  "abandoned_early": 0,
+  "cpi_score": 85.6,
+  "difficulty_adjustment": 1,
+  "target_next_difficulty": 3,
+  "caregiver_observed_mood": "Engaged",
+  "model_routing_breakdown": {
+    "model_1_dade_adaptive_difficulty": {
+      "description": "Evaluates interaction telemetry to scale in-game difficulty tiers 1 to 5.",
+      "inputs_routed": {
+        "accuracy": 0.9,
+        "avg_response_time_ms": 1850,
+        "hint_count": 0,
+        "error_streak_max": 1,
+        "assigned_difficulty": 2,
+        "rounds_completed": 8,
+        "target_resp_sec": 2.5
+      },
+      "outputs_generated": {
+        "cpi_score": 85.6,
+        "difficulty_adjustment": 1,
+        "current_difficulty": 2,
+        "recommended_difficulty": 3,
+        "clinical_reasoning": "Excellent flow state! Accuracy was 90% with brisk response latency (1850ms). Advancing to Level 3 to sustain gentle engagement.",
+        "decision_metadata": {
+          "accuracy_pct": 90,
+          "avg_response_ms": 1850,
+          "hints_utilized": 0,
+          "max_error_streak": 1,
+          "model_evaluated": "LightGBM"
+        }
+      }
+    },
+    "model_2_safety_circuit": {
+      "description": "Intercepts session if agitation, exhaustion, or repeated errors are observed.",
+      "inputs_routed": {
+        "caregiver_observed_mood": "Engaged",
+        "error_streak_max": 1,
+        "avg_response_time_ms": 1850,
+        "abandoned_early": 0
+      },
+      "outputs_generated": {
+        "allow_cognitive_game": true,
+        "recommended_mode": "Cognitive_Engagement",
+        "trigger_type": "none",
+        "message": "Session is progressing smoothly."
+      }
+    },
+    "model_3_cognitive_recommender": {
+      "description": "Selects the next cognitive domain using contextual bandit logic.",
+      "inputs_routed": {
+        "domain": "Memory",
+        "time_of_day": "Morning",
+        "cpi_score": 85.6,
+        "interaction_mode": "Cognitive_Together"
+      },
+      "outputs_generated": {
+        "current_domain": "Memory",
+        "recommended_next_domain": "Attention",
+        "fatigue_decay_applied": false
+      }
+    },
+    "model_4_longitudinal_trajectory": {
+      "description": "Longitudinal stream point for tracking 14-day drift without medical labeling.",
+      "stream_point": {
+        "timestamp": "2026-09-16 09:30:00",
+        "cpi_score": 85.6,
+        "latency_ms": 1850,
+        "accuracy": 0.9,
+        "window_status": "Aggregated for 14-day rolling linear slope (m) and Isolation Forest"
+      }
+    }
+  }
+}

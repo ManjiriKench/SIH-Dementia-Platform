@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Multilingual string dictionaries supporting English, Hindi, and Assamese.
 class AppStrings {
   AppStrings._();
 
+  static const String _prefLanguageKey = 'selected_language';
   static String currentLanguage = 'en'; // 'en', 'hi', 'as'
   static final ValueNotifier<String> languageNotifier = ValueNotifier<String>('en');
 
@@ -217,10 +219,28 @@ class AppStrings {
         key;
   }
 
+  static Future<void> loadSavedLanguage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_prefLanguageKey);
+      if (saved != null && _localizedValues.containsKey(saved)) {
+        currentLanguage = saved;
+        languageNotifier.value = saved;
+      }
+    } catch (e) {
+      debugPrint('Error loading saved language: $e');
+    }
+  }
+
   static void setLanguage(String langCode) {
     if (_localizedValues.containsKey(langCode)) {
       currentLanguage = langCode;
       languageNotifier.value = langCode;
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString(_prefLanguageKey, langCode);
+      }).catchError((e) {
+        debugPrint('Error saving language preference: $e');
+      });
     }
   }
 }

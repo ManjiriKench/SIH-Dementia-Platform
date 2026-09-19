@@ -5,6 +5,7 @@ import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../models/memory_item.dart';
 import '../../services/memory_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -71,6 +72,7 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
   @override
   void initState() {
     super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Look & Talk');
     // Pre-populate with any personal photos from memory vault if available
     final personalPhotos = MemoryService.instance.getMemoriesByType(MemoryType.photo);
     if (personalPhotos.isNotEmpty) {
@@ -102,6 +104,7 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
       });
     } else {
       // Completed all photos peacefully
+      SessionService.instance.completeSession();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(

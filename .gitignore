@@ -8,6 +8,9 @@ __pycache__/
 # Environment variables / secrets
 .env
 
+#leader_resources
+leader_resources/
+
 # Flutter generated files
 mobile/.dart_tool/
 mobile/build/

@@ -15,7 +15,13 @@ class LanguageSelectionScreen extends StatefulWidget {
 }
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
-  String _selectedLang = 'en';
+  late String _selectedLang;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLang = AppStrings.currentLanguage;
+  }
 
   final List<Map<String, String>> _languages = [
     {

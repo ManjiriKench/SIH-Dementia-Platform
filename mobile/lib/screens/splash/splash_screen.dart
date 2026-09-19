@@ -60,16 +60,18 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkUserFlow() async {
+    await ProfileService.instance.loadProfile(useMock: false);
     final hasProfile = ProfileService.instance.hasProfile;
 
     if (hasProfile) {
+      if (!mounted) return;
       setState(() => _isReturningUser = true);
-      await Future.delayed(const Duration(milliseconds: 2200));
+      await Future.delayed(const Duration(milliseconds: 1500));
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(AppRoutes.todaysJourney);
     } else {
-      // Show logo for 2 seconds, then reveal Start button
-      await Future.delayed(const Duration(milliseconds: 2000));
+      // Show logo, then reveal Start button
+      await Future.delayed(const Duration(milliseconds: 1400));
       if (!mounted) return;
       setState(() => _showStartButton = true);
       _buttonController.forward();
@@ -152,6 +154,40 @@ class _SplashScreenState extends State<SplashScreen>
                         letterSpacing: 0.1,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // ASTEYA Co-branding Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWarm,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.forestPrimary.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.eco_rounded,
+                            size: 14,
+                            color: AppColors.forestPrimary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'AN ASTEYA INITIATIVE',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                              color: AppColors.forestDark.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
                     const Spacer(flex: 2),

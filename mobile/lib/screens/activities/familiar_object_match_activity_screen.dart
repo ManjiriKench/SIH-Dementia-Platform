@@ -5,6 +5,7 @@ import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
+import '../../services/session_service.dart';
 import '../patient_activity/activity_completion_screen.dart';
 
 class FamiliarObjectItem {
@@ -81,6 +82,7 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
   @override
   void initState() {
     super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Familiar Object Match');
     _setupRound();
   }
 
@@ -201,6 +203,7 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
       } else {
         Future.delayed(const Duration(milliseconds: 1000), () {
           if (mounted) {
+            SessionService.instance.completeSession();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => const ActivityCompletionScreen(

@@ -1,11 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/patient_profile.dart';
 import 'mock_data_repository.dart';
 
-/// Service managing patient profile state, onboarding progress, voice notes, and draft edits.
+/// Service managing patient profile state, onboarding progress, voice notes, and local disk persistence.
 class ProfileService extends ChangeNotifier {
   static final ProfileService instance = ProfileService._internal();
   ProfileService._internal();
+
+  static const String _profileStorageKey = 'smriti_active_patient_profile';
+  static const String _voiceGeneralKey = 'smriti_voice_general';
+  static const String _voiceObsKey = 'smriti_voice_obs';
+  static const String _voiceDrKey = 'smriti_voice_dr';
 
   PatientProfile? _activeProfile;
   bool _isLoading = false;
@@ -22,22 +29,39 @@ class ProfileService extends ChangeNotifier {
   bool get hasCompletedOnboarding => _hasCompletedOnboarding;
   bool get isLoading => _isLoading;
 
-  /// Loads initial profile or default mock profile
+  /// Loads saved profile from local disk, with fallback to default sample if requested
   Future<void> loadProfile({bool useMock = true}) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (useMock && _activeProfile == null) {
-      _activeProfile = MockDataRepository.createSamplePatient();
-      _hasCompletedOnboarding = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString(_profileStorageKey);
+
+      if (savedJson != null && savedJson.isNotEmpty) {
+        final decoded = jsonDecode(savedJson) as Map<String, dynamic>;
+        _activeProfile = PatientProfile.fromJson(decoded);
+        _hasCompletedOnboarding = true;
+        generalVoiceNote = prefs.getString(_voiceGeneralKey);
+        observationVoiceNote = prefs.getString(_voiceObsKey);
+        doctorVoiceNote = prefs.getString(_voiceDrKey);
+      } else if (useMock && _activeProfile == null) {
+        _activeProfile = MockDataRepository.createSamplePatient();
+        _hasCompletedOnboarding = true;
+      }
+    } catch (e) {
+      debugPrint('Error loading saved profile: $e');
+      if (useMock && _activeProfile == null) {
+        _activeProfile = MockDataRepository.createSamplePatient();
+        _hasCompletedOnboarding = true;
+      }
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  /// Sets or saves a completed profile from caregiver onboarding
+  /// Sets or saves a completed profile from caregiver onboarding to memory and local disk
   void saveProfile(PatientProfile profile, {
     String? generalVoice,
     String? obsVoice,
@@ -49,15 +73,31 @@ class ProfileService extends ChangeNotifier {
     if (obsVoice != null) observationVoiceNote = obsVoice;
     if (drVoice != null) doctorVoiceNote = drVoice;
     notifyListeners();
+    _persistProfileToDisk();
   }
 
-  /// Updates specific fields of the active profile
+  /// Updates specific fields of the active profile and syncs to disk
   void updateProfile(PatientProfile updated) {
     _activeProfile = updated;
     notifyListeners();
+    _persistProfileToDisk();
   }
 
-  /// Clears active profile (for testing fresh onboarding)
+  Future<void> _persistProfileToDisk() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_activeProfile != null) {
+        await prefs.setString(_profileStorageKey, jsonEncode(_activeProfile!.toJson()));
+      }
+      if (generalVoiceNote != null) await prefs.setString(_voiceGeneralKey, generalVoiceNote!);
+      if (observationVoiceNote != null) await prefs.setString(_voiceObsKey, observationVoiceNote!);
+      if (doctorVoiceNote != null) await prefs.setString(_voiceDrKey, doctorVoiceNote!);
+    } catch (e) {
+      debugPrint('Error persisting profile to disk: $e');
+    }
+  }
+
+  /// Clears active profile (for testing fresh onboarding) from memory and disk
   void clearProfile() {
     _activeProfile = null;
     _hasCompletedOnboarding = false;
@@ -65,5 +105,29 @@ class ProfileService extends ChangeNotifier {
     observationVoiceNote = null;
     doctorVoiceNote = null;
     notifyListeners();
+    _clearProfileFromDisk();
+  }
+
+  /// Resets to clean Bonti Baruah demo profile for presentations
+  Future<void> resetToDemoProfile() async {
+    _activeProfile = MockDataRepository.createSamplePatient();
+    _hasCompletedOnboarding = true;
+    generalVoiceNote = null;
+    observationVoiceNote = null;
+    doctorVoiceNote = null;
+    notifyListeners();
+    await _persistProfileToDisk();
+  }
+
+  Future<void> _clearProfileFromDisk() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_profileStorageKey);
+      await prefs.remove(_voiceGeneralKey);
+      await prefs.remove(_voiceObsKey);
+      await prefs.remove(_voiceDrKey);
+    } catch (e) {
+      debugPrint('Error clearing profile from disk: $e');
+    }
   }
 }

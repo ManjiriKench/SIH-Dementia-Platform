@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../models/memory_item.dart';
+import '../../services/memory_service.dart';
+import '../../services/profile_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -49,7 +53,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
 
   late List<FamilyCardItem> _cards;
 
-  final List<FamilyCardItem> _masterFamilyPool = [
+  List<FamilyCardItem> _masterFamilyPool = [];
+
+  final List<FamilyCardItem> _defaultFamilyPool = [
     FamilyCardItem(
       id: 'priyanka',
       personName: 'Priyanka',
@@ -79,7 +85,81 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
   @override
   void initState() {
     super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Family Match & Tell');
+    _loadFamilyPool();
     _setupRound();
+  }
+
+  void _loadFamilyPool() {
+    final List<FamilyCardItem> dynamicPool = [];
+    final colors = [
+      AppColors.forestPrimary,
+      AppColors.domainMemory,
+      AppColors.peachDark,
+      AppColors.domainLanguage,
+      AppColors.domainVisuospatial,
+    ];
+    final icons = [
+      Icons.face_3_rounded,
+      Icons.face_rounded,
+      Icons.person_rounded,
+      Icons.sentiment_satisfied_alt_rounded,
+      Icons.favorite_rounded,
+    ];
+
+    // 1. Try approved person memories from MemoryService
+    final personMemories = MemoryService.instance
+        .getMemoriesByType(MemoryType.person)
+        .where((m) => m.isCaregiverApproved)
+        .toList();
+
+    for (int i = 0; i < personMemories.length; i++) {
+      final mem = personMemories[i];
+      dynamicPool.add(FamilyCardItem(
+        id: 'mem_${mem.id}',
+        personName: mem.title,
+        relationship: mem.relationOrContext ?? 'Family Member',
+        icon: icons[i % icons.length],
+        themeColor: colors[i % colors.length],
+        memorySnippet: mem.tags.isNotEmpty
+            ? 'Cherished memory: ${mem.tags.join(", ")}'
+            : 'A beloved family member whose love is always with you.',
+      ));
+    }
+
+    // 2. If fewer than 2, check ProfileService.activeProfile.familiarPeople
+    if (dynamicPool.length < 2) {
+      final familiarPeople = ProfileService.instance.activeProfile?.familiarPeople ?? [];
+      for (int i = 0; i < familiarPeople.length; i++) {
+        final personStr = familiarPeople[i];
+        String name = personStr;
+        String rel = 'Family Member';
+        if (personStr.contains('(') && personStr.contains(')')) {
+          final parts = personStr.split('(');
+          name = parts[0].trim();
+          rel = parts[1].replaceAll(')', '').trim();
+        }
+        final existing = dynamicPool.any((p) => p.personName.toLowerCase() == name.toLowerCase());
+        if (!existing) {
+          final idx = dynamicPool.length;
+          dynamicPool.add(FamilyCardItem(
+            id: 'prof_person_$idx',
+            personName: name,
+            relationship: rel,
+            icon: icons[idx % icons.length],
+            themeColor: colors[idx % colors.length],
+            memorySnippet: 'Always close to heart, bringing warmth and familiar comfort.',
+          ));
+        }
+      }
+    }
+
+    // 3. Fallback to default pool if still fewer than 2
+    if (dynamicPool.length >= 2) {
+      _masterFamilyPool = dynamicPool;
+    } else {
+      _masterFamilyPool = List.from(_defaultFamilyPool);
+    }
   }
 
   void _setupRound() {
@@ -87,9 +167,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
     _hintCardIndex = null;
     _isProcessingMatch = false;
 
-    final pool = _difficultyPairs == 2
-        ? _masterFamilyPool.take(2).toList()
-        : _masterFamilyPool.take(3).toList();
+    final availablePairs = _masterFamilyPool.length;
+    final pairsCount = _difficultyPairs <= availablePairs ? _difficultyPairs : availablePairs;
+    final pool = _masterFamilyPool.take(pairsCount).toList();
 
     final List<FamilyCardItem> list = [];
     for (final p in pool) {
@@ -247,6 +327,7 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
         );
       } else {
         // Complete activity
+        SessionService.instance.completeSession();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => const ActivityCompletionScreen(
@@ -259,6 +340,7 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
   }
 
   void _giveCaregiverHint() {
+    SessionService.instance.recordHint();
     // Find an unmatched pair and highlight one
     for (int i = 0; i < _cards.length; i++) {
       if (!_cards[i].isMatched) {

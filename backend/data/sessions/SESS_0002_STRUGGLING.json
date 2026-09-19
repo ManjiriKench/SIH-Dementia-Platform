@@ -1,0 +1,88 @@
+{
+  "session_id": "SESS_0002_STRUGGLING",
+  "patient_id": "PAT_001_ASHA",
+  "cohort": "Moderate_Fluctuating",
+  "timestamp": "2026-09-16 14:15:00",
+  "time_of_day": "Afternoon",
+  "domain": "Executive_Function",
+  "game_id": "act_exec_routine_order",
+  "interaction_mode": "Independent",
+  "assigned_difficulty": 3,
+  "rounds_completed": 6,
+  "accuracy": 0.45,
+  "avg_response_time_ms": 5200,
+  "hint_count": 3,
+  "error_streak_max": 3,
+  "abandoned_early": 0,
+  "cpi_score": 35.4,
+  "difficulty_adjustment": -1,
+  "target_next_difficulty": 2,
+  "caregiver_observed_mood": "Calm",
+  "model_routing_breakdown": {
+    "model_1_dade_adaptive_difficulty": {
+      "description": "Evaluates interaction telemetry to scale in-game difficulty tiers 1 to 5.",
+      "inputs_routed": {
+        "accuracy": 0.45,
+        "avg_response_time_ms": 5200,
+        "hint_count": 3,
+        "error_streak_max": 3,
+        "assigned_difficulty": 3,
+        "rounds_completed": 6,
+        "target_resp_sec": 2.5
+      },
+      "outputs_generated": {
+        "cpi_score": 35.4,
+        "difficulty_adjustment": -1,
+        "current_difficulty": 3,
+        "recommended_difficulty": 2,
+        "clinical_reasoning": "Mild friction observed (Accuracy 45%, 3 hints used). Simplifying challenge to Level 2 to protect confidence and prevent frustration.",
+        "decision_metadata": {
+          "accuracy_pct": 45,
+          "avg_response_ms": 5200,
+          "hints_utilized": 3,
+          "max_error_streak": 3,
+          "model_evaluated": "LightGBM"
+        }
+      }
+    },
+    "model_2_safety_circuit": {
+      "description": "Intercepts session if agitation, exhaustion, or repeated errors are observed.",
+      "inputs_routed": {
+        "caregiver_observed_mood": "Calm",
+        "error_streak_max": 3,
+        "avg_response_time_ms": 5200,
+        "abandoned_early": 0
+      },
+      "outputs_generated": {
+        "allow_cognitive_game": true,
+        "recommended_mode": "Cognitive_Engagement",
+        "trigger_type": "none",
+        "message": "Session is progressing smoothly."
+      }
+    },
+    "model_3_cognitive_recommender": {
+      "description": "Selects the next cognitive domain using contextual bandit logic.",
+      "inputs_routed": {
+        "domain": "Executive_Function",
+        "time_of_day": "Afternoon",
+        "cpi_score": 35.4,
+        "interaction_mode": "Independent"
+      },
+      "outputs_generated": {
+        "current_domain": "Executive_Function",
+        "recommended_next_domain": "Orientation",
+        "fatigue_decay_applied": false
+      }
+    },
+    "model_4_longitudinal_trajectory": {
+      "description": "Longitudinal stream point for tracking 14-day drift without medical labeling.",
+      "stream_point": {
+        "timestamp": "2026-09-16 14:15:00",
+        "cpi_score": 35.4,
+        "latency_ms": 5200,
+        "accuracy": 0.45,
+        "window_status": "Aggregated for 14-day rolling linear slope (m) and Isolation Forest"
+      }
+    }
+  }
+}

@@ -162,4 +162,101 @@ class PatientProfile {
       updatedAt: DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'preferredName': preferredName,
+    'ageRange': ageRange,
+    'preferredLanguage': preferredLanguage,
+    'relationshipToCaregiver': relationshipToCaregiver,
+    'profilePhotoUrl': profilePhotoUrl,
+    'readingComfort': readingComfort,
+    'hearingSupport': hearingSupport,
+    'visualSupport': visualSupport,
+    'speechComfort': speechComfort,
+    'touchMobility': touchMobility,
+    'independentPlay': independentPlay,
+    'attentionSpan': attentionSpan,
+    'areasToSupport': areasToSupport.map((e) => e.name).toList(),
+    'safeActivityTypes': safeActivityTypes,
+    'activitiesToAvoid': activitiesToAvoid,
+    'interestsAndHobbies': interestsAndHobbies,
+    'favoriteMusicGenres': favoriteMusicGenres,
+    'familiarPlacesAndFoods': familiarPlacesAndFoods,
+    'interactionStyle': interactionStyle,
+    'preferredTimeOfDay': preferredTimeOfDay,
+    'dailyRoutineAnchors': dailyRoutineAnchors,
+    'caregiverAvailability': caregiverAvailability,
+    'recentMoodTags': recentMoodTags,
+    'observationNote': observationNote,
+    'whatHelpedNote': whatHelpedNote,
+    'familiarPeople': familiarPeople,
+    'familiarPlaces': familiarPlaces,
+    'importantMemories': importantMemories,
+    'personalityTraits': personalityTraits,
+    'doctorRecommendations': doctorRecommendations,
+    'isComplete': isComplete,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory PatientProfile.fromJson(Map<String, dynamic> json) {
+    return PatientProfile(
+      id: json['id'] as String? ?? 'pat_default',
+      preferredName: json['preferredName'] as String? ?? 'Bonti Baruah',
+      ageRange: json['ageRange'] as String? ?? '70-79 years',
+      preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
+      relationshipToCaregiver: json['relationshipToCaregiver'] as String? ?? 'Caregiver',
+      profilePhotoUrl: json['profilePhotoUrl'] as String?,
+      readingComfort: json['readingComfort'] as String? ?? 'prefers_large_text',
+      hearingSupport: json['hearingSupport'] as String? ?? 'normal',
+      visualSupport: json['visualSupport'] as String? ?? 'large_elements_needed',
+      speechComfort: json['speechComfort'] as String? ?? 'expressive',
+      touchMobility: json['touchMobility'] as String? ?? 'gentle_broad_tap',
+      independentPlay: json['independentPlay'] as String? ?? 'gentle_supervision',
+      attentionSpan: json['attentionSpan'] as String? ?? '5_10_minutes',
+      areasToSupport: (json['areasToSupport'] as List<dynamic>?)
+              ?.map((e) => CognitiveDomainType.values.firstWhere(
+                    (t) => t.name == e.toString(),
+                    orElse: () => CognitiveDomainType.memory,
+                  ))
+              .toList() ??
+          const [CognitiveDomainType.memory, CognitiveDomainType.orientation],
+      safeActivityTypes: (json['safeActivityTypes'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['matching', 'music_listening', 'photo_stories'],
+      activitiesToAvoid: (json['activitiesToAvoid'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['fast_timers', 'complex_spelling'],
+      interestsAndHobbies: (json['interestsAndHobbies'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Gardening', 'Classical Songs'],
+      favoriteMusicGenres: (json['favoriteMusicGenres'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Rabindra Sangeet', 'Old Classics'],
+      familiarPlacesAndFoods: (json['familiarPlacesAndFoods'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Veranda Swing', 'Chai'],
+      interactionStyle: json['interactionStyle'] as String? ?? 'warm_and_guided',
+      preferredTimeOfDay: json['preferredTimeOfDay'] as String? ?? 'Morning (9 AM - 11 AM)',
+      dailyRoutineAnchors: (json['dailyRoutineAnchors'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Morning Assam chai', 'Evening prayers'],
+      caregiverAvailability: json['caregiverAvailability'] as String? ?? 'Evenings only',
+      recentMoodTags: (json['recentMoodTags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['calm', 'engaged'],
+      observationNote: json['observationNote'] as String?,
+      whatHelpedNote: json['whatHelpedNote'] as String?,
+      familiarPeople: (json['familiarPeople'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Priyanka (Daughter)', 'Arup (Son)'],
+      familiarPlaces: (json['familiarPlaces'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Tezpur Riverside', 'Veranda Swing'],
+      importantMemories: (json['importantMemories'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Family Tea Garden Trips'],
+      personalityTraits: (json['personalityTraits'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Gentle & Observant'],
+      doctorRecommendations: json['doctorRecommendations'] as String?,
+      isComplete: json['isComplete'] as bool? ?? true,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
 }

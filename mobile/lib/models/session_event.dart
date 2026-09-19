@@ -63,4 +63,35 @@ class SessionEvent {
     'usedAudioGuidance': usedAudioGuidance,
     'isQueuedOffline': isQueuedOffline,
   };
+
+  factory SessionEvent.fromJson(Map<String, dynamic> json) {
+    return SessionEvent(
+      sessionId: json['sessionId'] as String? ?? 'sess_default',
+      patientId: json['patientId'] as String? ?? 'pat_default',
+      activityId: json['activityId'] as String? ?? 'act_default',
+      domain: CognitiveDomainType.values.firstWhere(
+        (d) => d.name == json['domain'],
+        orElse: () => CognitiveDomainType.memory,
+      ),
+      modality: ActivityModality.values.firstWhere(
+        (m) => m.name == json['modality'],
+        orElse: () => ActivityModality.independent,
+      ),
+      startTime: json['startTime'] != null
+          ? DateTime.tryParse(json['startTime'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      endTime: json['endTime'] != null
+          ? DateTime.tryParse(json['endTime'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      isCompleted: json['isCompleted'] as bool? ?? true,
+      successRate: (json['successRate'] as num?)?.toDouble() ?? 1.0,
+      averageResponseTimeMs: json['averageResponseTimeMs'] as int? ?? 3500,
+      hintsUsed: json['hintsUsed'] as int? ?? 0,
+      pauseCount: json['pauseCount'] as int? ?? 0,
+      difficultyLevel: json['difficultyLevel'] as String? ?? 'Gentle',
+      contentType: json['contentType'] as String? ?? 'nature_cultural',
+      usedAudioGuidance: json['usedAudioGuidance'] as bool? ?? true,
+      isQueuedOffline: json['isQueuedOffline'] as bool? ?? false,
+    );
+  }
 }

@@ -132,6 +132,30 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
       drVoice: _part3VoiceNote,
     );
 
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.forestPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          margin: const EdgeInsets.all(16),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Profile for ${profile.preferredName} saved safely offline.',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+
     // Navigate to Activity Profile (6 Domains) to show organized domain profile
     Navigator.of(context).pushReplacementNamed(AppRoutes.domainOverview);
   }

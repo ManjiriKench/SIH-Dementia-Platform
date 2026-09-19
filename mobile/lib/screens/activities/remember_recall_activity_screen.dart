@@ -5,6 +5,8 @@ import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
+import '../../services/profile_service.dart';
+import '../../services/session_service.dart';
 import '../patient_activity/activity_completion_screen.dart';
 
 enum RecallPhase { memorize, recall, feedback }
@@ -39,7 +41,7 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
   RecallPhase _phase = RecallPhase.memorize;
   final Set<String> _selectedItemIds = {};
 
-  final List<RecallItem> _allPool = const [
+  final List<RecallItem> _defaultPool = const [
     RecallItem(id: 'kettle', name: 'Assam Chai Kettle', icon: Icons.emoji_food_beverage_rounded, color: AppColors.domainExecutive),
     RecallItem(id: 'glasses', name: 'Reading Glasses', icon: Icons.visibility_rounded, color: AppColors.domainMemory),
     RecallItem(id: 'bell', name: 'Brass Prayer Bell', icon: Icons.notifications_active_rounded, color: AppColors.domainLanguage),
@@ -48,13 +50,62 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
     RecallItem(id: 'plant', name: 'Tulsi Plant', icon: Icons.eco_rounded, color: AppColors.sageDark),
   ];
 
+  late List<RecallItem> _activePool;
   late List<RecallItem> _targetItems;
   late List<RecallItem> _choiceItems;
 
   @override
   void initState() {
     super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Remember & Recall');
+    _initPool();
     _setupRound();
+  }
+
+  void _initPool() {
+    final profile = ProfileService.instance.activeProfile;
+    final familiarItems = <RecallItem>[];
+
+    if (profile != null) {
+      final foodsAndPlaces = [
+        ...profile.familiarPlacesAndFoods,
+        ...profile.familiarPlaces,
+      ].where((s) => s.trim().isNotEmpty).toSet().toList();
+
+      for (int i = 0; i < foodsAndPlaces.length; i++) {
+        final name = foodsAndPlaces[i];
+        final lower = name.toLowerCase();
+        IconData icon = Icons.star_rounded;
+        Color col = AppColors.domainMemory;
+
+        if (lower.contains('tea') || lower.contains('chai') || lower.contains('kettle')) {
+          icon = Icons.emoji_food_beverage_rounded;
+          col = AppColors.domainExecutive;
+        } else if (lower.contains('pitha') || lower.contains('food') || lower.contains('fish') || lower.contains('rice') || lower.contains('tenga')) {
+          icon = Icons.restaurant_rounded;
+          col = AppColors.peachDark;
+        } else if (lower.contains('veranda') || lower.contains('swing') || lower.contains('garden')) {
+          icon = Icons.chair_rounded;
+          col = AppColors.forestPrimary;
+        } else if (lower.contains('ghat') || lower.contains('river') || lower.contains('temple') || lower.contains('tezpur') || lower.contains('guwahati')) {
+          icon = Icons.place_rounded;
+          col = AppColors.domainOrientation;
+        }
+
+        familiarItems.add(RecallItem(
+          id: 'custom_$i',
+          name: name,
+          icon: icon,
+          color: col,
+        ));
+      }
+    }
+
+    if (familiarItems.length >= 2) {
+      _activePool = [...familiarItems, ..._defaultPool];
+    } else {
+      _activePool = List.from(_defaultPool);
+    }
   }
 
   void _setupRound() {
@@ -62,15 +113,28 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
     _selectedItemIds.clear();
 
     if (_currentRound == 1) {
-      // 2 target items to memorize, 4 choices
-      _targetItems = [_allPool[0], _allPool[1]]; // Kettle, Glasses
-      _choiceItems = [_allPool[0], _allPool[1], _allPool[2], _allPool[3]];
+      _targetItems = [_activePool[0], _activePool[1]];
+      _choiceItems = [
+        _activePool[0],
+        _activePool[1],
+        _activePool[2 % _activePool.length],
+        _activePool[3 % _activePool.length],
+      ];
     } else {
-      // 3 target items to memorize, 5 choices
-      _targetItems = [_allPool[2], _allPool[4], _allPool[5]]; // Bell, Book, Tulsi
-      _choiceItems = [_allPool[1], _allPool[2], _allPool[3], _allPool[4], _allPool[5]];
+      _targetItems = [
+        _activePool[2 % _activePool.length],
+        _activePool[3 % _activePool.length],
+        _activePool[4 % _activePool.length],
+      ];
+      _choiceItems = [
+        _activePool[1 % _activePool.length],
+        _activePool[2 % _activePool.length],
+        _activePool[3 % _activePool.length],
+        _activePool[4 % _activePool.length],
+        _activePool[5 % _activePool.length],
+      ];
     }
-    _choiceItems = List<RecallItem>.from(_choiceItems)..shuffle();
+    _choiceItems = List<RecallItem>.from(_choiceItems.toSet())..shuffle();
   }
 
   void _transitionToRecall() {
@@ -110,6 +174,7 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
         _setupRound();
       });
     } else {
+      SessionService.instance.completeSession();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(

@@ -87,12 +87,16 @@ class AppTheme {
         backgroundColor: Colors.white,
         selectedColor: AppColors.sageLight,
         labelStyle: TextStyle(
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        labelPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         side: BorderSide(color: AppColors.borderSoft),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

@@ -1,0 +1,252 @@
+{
+  "version": "1.0.0",
+  "total_activities": 14,
+  "domains": [
+    "Memory",
+    "Attention",
+    "Language",
+    "Executive_Function",
+    "Orientation",
+    "Visuospatial"
+  ],
+  "activities": [
+    {
+      "activity_id": "act_mem_face_recall",
+      "title": "Family Face & Name Recall",
+      "domain": "Memory",
+      "description": "Visual and episodic face-to-name association game. Presents familiar family portrait and asks player to identify the loved one.",
+      "target_resp_sec": 2.5,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together", "Connection_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["OneInstructionAtATime", "LargeTouchTarget", "NoTimeLimit", "AudioPromptDefault"]
+    },
+    {
+      "activity_id": "act_mem_object_match",
+      "title": "Familiar Object Match",
+      "domain": "Memory",
+      "description": "Card flip memory matching using personal artifacts (e.g., reading glasses, traditional tea cup, courtyard garden plants).",
+      "target_resp_sec": 2.2,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["HighContrastCards", "GentleAudioChime", "NoTimeLimit"]
+    },
+    {
+      "activity_id": "act_mem_sequence_retention",
+      "title": "Sound & Color Sequence",
+      "domain": "Memory",
+      "description": "Gentle Simon-style auditory-visual sequence recall using traditional instrument notes (flute, dhol, sitar).",
+      "target_resp_sec": 3.0,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["SoundFirst", "SlowPlaybackSpeed", "ProgressivePraise"]
+    },
+    {
+      "activity_id": "act_att_odd_one_out",
+      "title": "Odd One Out",
+      "domain": "Attention",
+      "description": "Selective visual attention trial. Identify the non-matching item in an array of culturally familiar icons.",
+      "target_resp_sec": 2.0,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["DistinctShapes", "TouchHighlight", "VoiceAssisted"]
+    },
+    {
+      "activity_id": "act_att_target_spotting",
+      "title": "Target Flower Spotting",
+      "domain": "Attention",
+      "description": "Sustained attention search. Tap the specified flower (e.g., Kopou Phool / Lotus) among gentle background foliage.",
+      "target_resp_sec": 2.2,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Medium"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["HighTouchTarget", "NoTimeLimit", "ColorBlindFriendly"]
+    },
+    {
+      "activity_id": "act_att_distractor_filter",
+      "title": "Marketplace Item Spotter",
+      "domain": "Attention",
+      "description": "Selective attention filtering out irrelevant distractors in a vibrant regional market illustration.",
+      "target_resp_sec": 2.8,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Medium"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["ZoomOnTouch", "VoiceDescription", "CalmBackgroundAudio"]
+    },
+    {
+      "activity_id": "act_lang_word_object_pair",
+      "title": "Voice Word & Object Pairing",
+      "domain": "Language",
+      "description": "Semantic fluency exercise. Spoken word is played in native tongue; patient selects matching visual item.",
+      "target_resp_sec": 2.4,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["AudioLoopButton", "LargeVisuals", "RegionalDialect"]
+    },
+    {
+      "activity_id": "act_lang_proverb_complete",
+      "title": "Folk Song & Proverb Completion",
+      "domain": "Language",
+      "description": "Semantic and long-term memory retrieval. Listen to an incomplete famous regional proverb and tap the closing word.",
+      "target_resp_sec": 3.2,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together", "Connection_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["SpokenOptions", "NostalgicAudio", "CaregiverPromptCard"]
+    },
+    {
+      "activity_id": "act_exec_routine_order",
+      "title": "Daily Routine Sequencing",
+      "domain": "Executive_Function",
+      "description": "Chronological executive sequencing. Order 3-5 daily steps (e.g., Wake up -> Morning Tea -> Take Medicine).",
+      "target_resp_sec": 3.5,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["DragAndDropOrTap", "NumberBadges", "AudioNarration"]
+    },
+    {
+      "activity_id": "act_exec_category_sort",
+      "title": "Kitchen & Garden Sorting",
+      "domain": "Executive_Function",
+      "description": "Categorization and logical set separation. Sort familiar items into Kitchen utensils vs. Garden tools.",
+      "target_resp_sec": 2.6,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["TwoBinsLayout", "ColorCoded", "ImmediateFeedback"]
+    },
+    {
+      "activity_id": "act_ori_day_time_match",
+      "title": "Sun & Time of Day Match",
+      "domain": "Orientation",
+      "description": "Temporal orientation. Match daily activities with the appropriate time period (Morning Sun, Afternoon, Evening Lamp).",
+      "target_resp_sec": 2.0,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["BrightSkyVisuals", "AudioNarrator", "SingleChoiceFirst"]
+    },
+    {
+      "activity_id": "act_ori_morning_night_sort",
+      "title": "Morning & Night Routine",
+      "domain": "Orientation",
+      "description": "Contextual orientation. Separate sunrise routines from bedtime calm activities.",
+      "target_resp_sec": 2.3,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": true,
+      "accessibility_tags": ["SunMoonIcons", "GentleVoicePraise"]
+    },
+    {
+      "activity_id": "act_vis_textile_pattern",
+      "title": "Gamusa & Mekhela Pattern Match",
+      "domain": "Visuospatial",
+      "description": "Visuospatial perception and symmetry completion using regional handloom geometric textile weaves.",
+      "target_resp_sec": 3.0,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Medium"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["HighContrastLines", "VibrantWeaveColors", "NoTimePressure"]
+    },
+    {
+      "activity_id": "act_vis_shape_continue",
+      "title": "Traditional Pottery Silhouette",
+      "domain": "Visuospatial",
+      "description": "Shape perception and spatial continuity. Match outline silhouettes of traditional tea kettles and clay pots.",
+      "target_resp_sec": 2.8,
+      "difficulty_range": [1, 5],
+      "requirements": {
+        "requires_reading": false,
+        "requires_speech": false,
+        "requires_audio": true,
+        "visual_complexity": "Low"
+      },
+      "interaction_modes": ["Independent", "Cognitive_Together"],
+      "personal_memory_supported": false,
+      "accessibility_tags": ["CleanSilhouette", "SmoothGlowOnSelect", "TouchConfirm"]
+    }
+  ]
+}

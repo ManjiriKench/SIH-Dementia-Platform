@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
+import '../../models/activity_item.dart';
 import '../../models/cognitive_domain.dart';
+import '../../models/dashboard_data.dart';
 import '../../services/feedback_service.dart';
 import '../../services/memory_service.dart';
 import '../../services/mock_data_repository.dart';
 import '../../services/profile_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/caregiver/trend_bar_chart.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
@@ -38,6 +41,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     super.initState();
     FeedbackService.instance.addListener(_onServiceUpdate);
     ProfileService.instance.addListener(_onServiceUpdate);
+    SessionService.instance.addListener(_onServiceUpdate);
   }
 
   void _onServiceUpdate() {
@@ -48,6 +52,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
   void dispose() {
     FeedbackService.instance.removeListener(_onServiceUpdate);
     ProfileService.instance.removeListener(_onServiceUpdate);
+    SessionService.instance.removeListener(_onServiceUpdate);
     super.dispose();
   }
 
@@ -105,11 +110,122 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     );
   }
 
+  DashboardData _buildDynamicDashboardData(String patientName) {
+    final base = MockDataRepository.getSampleDashboardData(patientName);
+    final history = SessionService.instance.completedSessionsHistory;
+
+    if (history.isEmpty) return base;
+
+    // 1. Calculate live domain exposures
+    final Map<CognitiveDomainType, int> domainCounts = {};
+    for (final s in history) {
+      domainCounts[s.domain] = (domainCounts[s.domain] ?? 0) + 1;
+    }
+
+    final updatedDomainExposure = base.domainExposure.map((exposure) {
+      final liveCount = domainCounts[exposure.domain] ?? 0;
+      return DomainExposureMetric(
+        domain: exposure.domain,
+        domainName: exposure.domainName,
+        sessionsCountThisWeek: exposure.sessionsCountThisWeek + liveCount,
+        comfortSummary: liveCount > 0
+            ? 'Active engagement: $liveCount session${liveCount > 1 ? "s" : ""} recorded today'
+            : exposure.comfortSummary,
+      );
+    }).toList();
+
+    // 2. Calculate today's completions for weekly consistency
+    final now = DateTime.now();
+    final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
+    final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final todayLabel = dayLabels[todayWeekday - 1];
+
+    final todaySessions = history.where((s) =>
+        s.startTime.year == now.year &&
+        s.startTime.month == now.month &&
+        s.startTime.day == now.day).length;
+
+    final updatedWeekly = base.weeklyConsistency.map((point) {
+      if (point.dayLabel == todayLabel) {
+        return DailyContextPoint(
+          dayLabel: point.dayLabel,
+          completedActivitiesCount: point.completedActivitiesCount + todaySessions,
+          engagementLevel: point.engagementLevel,
+          primaryMood: point.primaryMood,
+          hadTogetherSession: point.hadTogetherSession || history.any((s) => s.modality == ActivityModality.cognitiveTogether),
+          hadMusicActivity: point.hadMusicActivity || history.any((s) => s.activityId.contains('music')),
+        );
+      }
+      return point;
+    }).toList();
+
+    return DashboardData(
+      patientName: patientName,
+      completedTodayCount: base.completedTodayCount + todaySessions,
+      targetDailyActivities: base.targetDailyActivities,
+      pendingFeedbackCount: base.pendingFeedbackCount,
+      recommendedNextActivities: base.recommendedNextActivities,
+      weeklyConsistency: updatedWeekly,
+      domainExposure: updatedDomainExposure,
+      recentFeedback: base.recentFeedback,
+      syncStatus: base.syncStatus,
+      lastUpdated: now,
+    );
+  }
+
+  void _confirmResetDemo() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.restart_alt_rounded, color: AppColors.forestPrimary),
+            SizedBox(width: 8),
+            Text('Reset Demo Story', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          'This will reset the active session to the fresh Bonti Baruah demo profile with baseline activity consistency for your presentation.',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.forestPrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              await ProfileService.instance.resetToDemoProfile();
+              await SessionService.instance.clearHistory();
+              if (ctx.mounted) Navigator.of(ctx).pop();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Demo profile reset successfully for presentation.'),
+                    backgroundColor: AppColors.forestPrimary,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            child: const Text('Reset Demo'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final patient = ProfileService.instance.activeProfile ?? MockDataRepository.createSamplePatient();
     final patientName = patient.preferredName;
-    final dashboardData = MockDataRepository.getSampleDashboardData(patientName);
+    final dashboardData = _buildDynamicDashboardData(patientName);
     final feedbackList = FeedbackService.instance.feedbackList;
     MemoryService.instance.initialize();
     final memories = MemoryService.instance.memories;
@@ -123,8 +239,13 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         title: const Text('Caregiver Dashboard', style: AppTypography.caregiverHeading),
         actions: [
           const Padding(
-            padding: EdgeInsets.only(right: 8.0),
+            padding: EdgeInsets.only(right: 4.0),
             child: LanguageToggleWidget(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.restart_alt_rounded, color: AppColors.forestPrimary),
+            tooltip: 'Reset Demo Profile',
+            onPressed: _confirmResetDemo,
           ),
           IconButton(
             icon: const Icon(Icons.grid_view_rounded, color: AppColors.forestPrimary),
@@ -135,6 +256,11 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             icon: const Icon(Icons.tune, color: AppColors.forestPrimary),
             tooltip: '15 System States',
             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.systemStatesShowcase),
+          ),
+          IconButton(
+            icon: const Icon(Icons.science_outlined, color: AppColors.forestPrimary),
+            tooltip: 'AI & Backend Diagnostics',
+            onPressed: () => Navigator.of(context).pushNamed('/backend_test'),
           ),
         ],
       ),

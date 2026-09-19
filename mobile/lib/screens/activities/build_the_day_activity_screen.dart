@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../services/profile_service.dart';
+import '../../services/session_service.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -40,7 +41,9 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
   bool _isVerifiedCorrect = false;
   String? _feedbackMessage;
 
-  final List<RoutineStepItem> _masterRoutine = [
+  List<RoutineStepItem> _masterRoutine = [];
+
+  final List<RoutineStepItem> _defaultMasterRoutine = [
     RoutineStepItem(
       correctOrder: 1,
       title: 'Morning Assam Tea on Veranda',
@@ -74,7 +77,65 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
   @override
   void initState() {
     super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Build the Day Together');
+    _loadRoutineAnchors();
     _initShuffledSequence();
+  }
+
+  void _loadRoutineAnchors() {
+    final anchors = ProfileService.instance.activeProfile?.dailyRoutineAnchors ?? [];
+    if (anchors.length >= 2) {
+      final List<RoutineStepItem> dynamicRoutine = [];
+      final colors = [
+        AppColors.domainExecutive,
+        AppColors.domainLanguage,
+        AppColors.forestPrimary,
+        AppColors.peachDark,
+        AppColors.domainVisuospatial,
+      ];
+
+      for (int i = 0; i < anchors.length; i++) {
+        final title = anchors[i];
+        final lower = title.toLowerCase();
+
+        // Detect appropriate icon from keyword
+        IconData icon = Icons.wb_sunny_rounded;
+        if (lower.contains('tea') || lower.contains('chai') || lower.contains('coffee')) {
+          icon = Icons.emoji_food_beverage_rounded;
+        } else if (lower.contains('radio') || lower.contains('music') || lower.contains('song')) {
+          icon = Icons.radio_rounded;
+        } else if (lower.contains('walk') || lower.contains('garden') || lower.contains('stroll')) {
+          icon = Icons.nature_people_rounded;
+        } else if (lower.contains('prayer') || lower.contains('diya') || lower.contains('puja')) {
+          icon = Icons.light_mode_rounded;
+        } else if (lower.contains('food') || lower.contains('breakfast') || lower.contains('lunch') || lower.contains('dinner')) {
+          icon = Icons.restaurant_rounded;
+        } else if (lower.contains('rest') || lower.contains('nap') || lower.contains('sleep')) {
+          icon = Icons.bedtime_rounded;
+        }
+
+        // Time hint
+        String timeHint;
+        if (lower.contains('morning') || i == 0) {
+          timeHint = 'Morning Anchor';
+        } else if (lower.contains('afternoon') || (i > 0 && i < anchors.length - 1)) {
+          timeHint = 'Mid-Day Anchor';
+        } else {
+          timeHint = 'Evening Anchor';
+        }
+
+        dynamicRoutine.add(RoutineStepItem(
+          correctOrder: i + 1,
+          title: title,
+          timeHint: timeHint,
+          icon: icon,
+          themeColor: colors[i % colors.length],
+        ));
+      }
+      _masterRoutine = dynamicRoutine;
+    } else {
+      _masterRoutine = List.from(_defaultMasterRoutine);
+    }
   }
 
   void _initShuffledSequence() {
@@ -118,9 +179,11 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
     setState(() {
       _isVerifiedCorrect = isCorrect;
       if (isCorrect) {
-        _feedbackMessage = 'A wonderful rhythm! Your day flows peacefully from morning tea to evening prayer.';
+        final firstTitle = _masterRoutine.isNotEmpty ? _masterRoutine.first.title : 'morning';
+        final lastTitle = _masterRoutine.isNotEmpty ? _masterRoutine.last.title : 'evening';
+        _feedbackMessage = 'A wonderful rhythm! Your day flows peacefully from $firstTitle to $lastTitle.';
       } else {
-        _feedbackMessage = 'Notice the morning tea and evening prayer. Would you like a gentle hint?';
+        _feedbackMessage = 'Notice what comes earlier and what comes later. Would you like a gentle hint?';
       }
     });
   }
@@ -130,11 +193,14 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
     setState(() {
       _currentSequence.sort((a, b) => a.correctOrder.compareTo(b.correctOrder));
       _isVerifiedCorrect = true;
-      _feedbackMessage = 'Together we arranged the day in perfect harmony: Morning Tea first, then Radio, Walk, and Prayers.';
+      final firstTitle = _masterRoutine.isNotEmpty ? _masterRoutine.first.title : 'morning';
+      final lastTitle = _masterRoutine.isNotEmpty ? _masterRoutine.last.title : 'evening';
+      _feedbackMessage = 'Together we arranged the day in perfect harmony: starting with $firstTitle through to $lastTitle.';
     });
   }
 
   void _finishActivity() {
+    SessionService.instance.completeSession();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => const ActivityCompletionScreen(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
+import '../../services/session_service.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
@@ -10,18 +11,32 @@ import '../../widgets/common/voice_instruction_bar.dart';
 /// Celebrates human effort, connection, and calm engagement without numerical scores.
 class ActivityCompletionScreen extends StatelessWidget {
   final String activityTitle;
+  final Duration? durationSpent;
   final VoidCallback? onNextActivity;
   final VoidCallback? onFinishSession;
 
   const ActivityCompletionScreen({
     super.key,
     this.activityTitle = 'Familiar Nature Match',
+    this.durationSpent,
     this.onNextActivity,
     this.onFinishSession,
   });
 
   @override
   Widget build(BuildContext context) {
+    final duration = durationSpent ?? SessionService.instance.lastCompletedSession?.sessionDuration;
+    String? durationFormatted;
+    if (duration != null && duration.inSeconds > 0) {
+      if (duration.inMinutes >= 1) {
+        final mins = duration.inMinutes;
+        final secs = duration.inSeconds % 60;
+        durationFormatted = secs > 0 ? '$mins min $secs sec' : '$mins min';
+      } else {
+        durationFormatted = '${duration.inSeconds} seconds';
+      }
+    }
+
     return Scaffold(
       backgroundColor: AppColors.backgroundWarm,
       body: SafeArea(
@@ -63,6 +78,33 @@ class ActivityCompletionScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+
+              if (durationFormatted != null) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWarm,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.borderSoft),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.schedule_rounded, size: 18, color: AppColors.forestPrimary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Time Spent: $durationFormatted',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
 
               // Voice celebration message

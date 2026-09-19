@@ -28,9 +28,11 @@ import 'screens/session_mode/independent_mode_entry_screen.dart';
 import 'screens/session_mode/together_mode_entry_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/system_states/patient_system_states_screen.dart';
+import 'services/profile_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppStrings.loadSavedLanguage();
   runApp(const DementiaAssistApp());
 }
 
@@ -42,12 +44,26 @@ class DementiaAssistApp extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: AppStrings.languageNotifier,
       builder: (context, currentLanguage, _) {
-        return MaterialApp(
-          key: ValueKey(currentLanguage),
-          title: 'Dementia Assist',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          initialRoute: AppRoutes.splash,
+        return ListenableBuilder(
+          listenable: ProfileService.instance,
+          builder: (context, _) {
+            final isLarge = ProfileService.instance.activeProfile?.readingComfort == 'prefers_large_text';
+            final textScale = isLarge ? 1.15 : 1.0;
+
+            return MaterialApp(
+              key: ValueKey(currentLanguage),
+              title: 'Smriti',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              builder: (context, child) {
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.linear(textScale),
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
+              initialRoute: AppRoutes.splash,
           routes: {
             AppRoutes.splash: (context) => const SplashScreen(),
             AppRoutes.caregiverWelcome: (context) => const CaregiverWelcomeScreen(),
@@ -88,6 +104,8 @@ class DementiaAssistApp extends StatelessWidget {
           onUnknownRoute: (settings) => MaterialPageRoute(
             builder: (context) => const ActivityShellScreen(),
           ),
+        );
+          },
         );
       },
     );

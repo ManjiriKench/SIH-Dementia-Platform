@@ -6,6 +6,7 @@ import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
+import '../../services/session_service.dart';
 import '../patient_activity/activity_completion_screen.dart';
 
 class ColorItemStimulus {
@@ -43,6 +44,12 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
   final int _totalRounds = 3;
   String? _feedbackText;
   bool _isSuccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Colour & Word Focus');
+  }
 
   final List<ColorItemStimulus> _rounds = const [
     ColorItemStimulus(
@@ -129,6 +136,7 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
         _feedbackText = null;
       });
     } else {
+      SessionService.instance.completeSession();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(

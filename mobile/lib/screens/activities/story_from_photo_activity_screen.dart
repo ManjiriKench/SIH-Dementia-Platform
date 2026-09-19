@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../models/memory_item.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
+import '../../services/memory_service.dart';
+import '../../services/session_service.dart';
 import '../patient_activity/activity_completion_screen.dart';
 
 /// Connection Together Activity 3: Story from Photo.
@@ -23,8 +26,9 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
   int _promptStep = 0; // 0: Setting, 1: People & Moments, 2: Feelings
   bool _isSpeaking = false;
   bool _isRecordingVoice = false;
+  late List<Map<String, dynamic>> _stories;
 
-  final List<Map<String, dynamic>> _stories = [
+  final List<Map<String, dynamic>> _defaultStories = const [
     {
       'title': 'The Green Tea Hills of Assam',
       'photoLabel': 'Morning Sunlight over Dibrugarh Tea Estate',
@@ -66,6 +70,75 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    SessionService.instance.startActivityByTitle(activityTitle: 'Story from Photo');
+    _initStories();
+  }
+
+  void _initStories() {
+    final customStories = <Map<String, dynamic>>[];
+
+    // 1. Check for conversation prompt memories
+    final promptMemories = MemoryService.instance
+        .getMemoriesByType(MemoryType.conversationPrompt)
+        .where((m) => m.isCaregiverApproved)
+        .toList();
+
+    for (final mem in promptMemories) {
+      customStories.add({
+        'title': mem.title,
+        'photoLabel': mem.relationOrContext ?? 'Cherished Conversation & Memory',
+        'icon': Icons.forum_rounded,
+        'color': AppColors.forestPrimary,
+        'bgGradient': const [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+        'storyQuestions': mem.tags.isNotEmpty
+            ? [
+                mem.relationOrContext ?? mem.title,
+                'What comes to mind when you recall ${mem.title}?',
+                mem.tags.first,
+              ]
+            : [
+                mem.relationOrContext ?? mem.title,
+                'Take all your time. What feelings or people does this bring to your heart?',
+                'Is there a favorite detail or story you would like to share with us?',
+              ],
+        'caregiverCue': 'Listen with warmth. Every shared memory is a gift.',
+      });
+    }
+
+    // 2. Check for photo memories
+    final photoMemories = MemoryService.instance
+        .getMemoriesByType(MemoryType.photo)
+        .where((m) => m.isCaregiverApproved)
+        .toList();
+
+    for (final mem in photoMemories) {
+      customStories.add({
+        'title': mem.title,
+        'photoLabel': mem.relationOrContext ?? 'Family Vault Photo',
+        'icon': Icons.photo_library_rounded,
+        'color': AppColors.domainMemory,
+        'bgGradient': const [Color(0xFFF3E5F5), Color(0xFFE1BEE7)],
+        'storyQuestions': [
+          mem.relationOrContext != null && mem.relationOrContext!.isNotEmpty
+              ? mem.relationOrContext!
+              : 'Look closely at this treasured family moment: ${mem.title}.',
+          'Who was present on this beautiful day, and what made everyone smile?',
+          'What is your favorite feeling when looking back at this time together?',
+        ],
+        'caregiverCue': 'Point out gentle details in the memory together.',
+      });
+    }
+
+    if (customStories.isNotEmpty) {
+      _stories = [...customStories, ..._defaultStories];
+    } else {
+      _stories = List.from(_defaultStories);
+    }
+  }
+
   void _speakCurrentPrompt(String text) async {
     setState(() => _isSpeaking = true);
     await VoiceAssistantService.instance.speak(text);
@@ -103,6 +176,7 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
           _promptStep = 0;
         });
       } else {
+        SessionService.instance.completeSession();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => const ActivityCompletionScreen(

@@ -98,4 +98,44 @@ class MemoryItem {
       dateAdded: dateAdded,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'type': type.name,
+    'relationOrContext': relationOrContext,
+    'audioAssetPath': audioAssetPath,
+    'iconOrImagePath': iconOrImagePath,
+    'tags': tags,
+    'allowedUsage': allowedUsage,
+    'isCaregiverApproved': isCaregiverApproved,
+    'syncStatus': syncStatus.name,
+    'dateAdded': dateAdded.toIso8601String(),
+  };
+
+  factory MemoryItem.fromJson(Map<String, dynamic> json) {
+    return MemoryItem(
+      id: json['id'] as String? ?? 'mem_${DateTime.now().millisecondsSinceEpoch}',
+      title: json['title'] as String? ?? 'Family Memory',
+      type: MemoryType.values.firstWhere(
+        (t) => t.name == json['type'],
+        orElse: () => MemoryType.photo,
+      ),
+      relationOrContext: json['relationOrContext'] as String?,
+      audioAssetPath: json['audioAssetPath'] as String?,
+      iconOrImagePath: json['iconOrImagePath'] as String?,
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['Family'],
+      allowedUsage: (json['allowedUsage'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+          const ['recognition', 'conversation'],
+      isCaregiverApproved: json['isCaregiverApproved'] as bool? ?? true,
+      syncStatus: SyncStatus.values.firstWhere(
+        (s) => s.name == json['syncStatus'],
+        orElse: () => SyncStatus.synced,
+      ),
+      dateAdded: json['dateAdded'] != null
+          ? DateTime.tryParse(json['dateAdded'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
 }

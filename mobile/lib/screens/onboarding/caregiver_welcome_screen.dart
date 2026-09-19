@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/navigation/app_routes.dart';
@@ -29,7 +29,17 @@ class CaregiverWelcomeScreen extends StatelessWidget {
                     tooltip: 'Back to Smriti Start',
                     onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.splash),
                   ),
-                  const LanguageToggleWidget(),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.science_outlined, color: AppColors.forestPrimary, size: 26),
+                        tooltip: 'AI & Backend Diagnostics',
+                        onPressed: () => Navigator.of(context).pushNamed('/backend_test'),
+                      ),
+                      const SizedBox(width: 4),
+                      const LanguageToggleWidget(),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -75,7 +85,37 @@ class CaregiverWelcomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+
+                    // ASTEYA co-branding badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWarm,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.forestPrimary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.eco_rounded, size: 12, color: AppColors.forestPrimary),
+                          const SizedBox(width: 5),
+                          Text(
+                            'AN ASTEYA INITIATIVE',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                              color: AppColors.forestDark.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     // Badge
                     Container(
@@ -176,7 +216,7 @@ class CaregiverWelcomeScreen extends StatelessWidget {
                       variant: ElderButtonVariant.primary,
                       height: 62,
                       onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.caregiverOnboarding);
+                        Navigator.of(context).pushNamed(AppRoutes.roleSelection);
                       },
                     ),
 
