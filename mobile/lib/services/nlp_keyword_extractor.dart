@@ -44,7 +44,7 @@ class ProfileKeywords {
       routines: {...routines, ...other.routines}.toList(),
       moodTags: {...moodTags, ...other.moodTags}.toList(),
       doctorAdvice: other.doctorAdvice ?? doctorAdvice,
-      rawText: [if (rawText != null) rawText!, if (other.rawText != null) other.rawText!].join(' '),
+      rawText: [?rawText, ?other.rawText].join(' '),
     );
   }
 }

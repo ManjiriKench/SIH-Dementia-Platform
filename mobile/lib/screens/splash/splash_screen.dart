@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/navigation/app_routes.dart';
@@ -66,7 +67,11 @@ class _SplashScreenState extends State<SplashScreen>
     if (hasProfile) {
       if (!mounted) return;
       setState(() => _isReturningUser = true);
-      await Future.delayed(const Duration(milliseconds: 1500));
+      final profile = ProfileService.instance.activeProfile;
+      if (profile != null) {
+        VoiceAssistantService.instance.greetPatient(profile.preferredName);
+      }
+      await Future.delayed(const Duration(milliseconds: 1600));
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(AppRoutes.todaysJourney);
     } else {
