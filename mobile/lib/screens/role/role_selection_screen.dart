@@ -218,16 +218,16 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 borderRadius: BorderRadius.circular(24),
                 onTap: () => VoiceAssistantService.instance.toggleGuideMode(),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         isGuideMode ? Icons.volume_up_rounded : Icons.volume_off_outlined,
-                        size: 18,
+                        size: 17,
                         color: isGuideMode ? Colors.white : AppColors.forestPrimary,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Text(
                         isGuideMode ? 'Voice: ON' : 'Voice Help',
                         style: TextStyle(
@@ -243,7 +243,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ),
           ),
           const LanguageToggleWidget(compact: true),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(
@@ -255,7 +255,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               const SizedBox(height: 8),
               // Top Offline Reassurance Banner
               Container(
-                constraints: const BoxConstraints(maxWidth: 320),
+                margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceWarm,

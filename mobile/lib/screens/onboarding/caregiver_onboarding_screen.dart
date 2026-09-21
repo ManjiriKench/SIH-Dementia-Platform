@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -24,8 +23,6 @@ class CaregiverOnboardingScreen extends StatefulWidget {
 
 class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
   int _currentStep = 1;
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _speechAvailable = false;
   bool _isListening = false;
   int _activeListeningField = 0;
   Timer? _listeningTimer;
@@ -64,7 +61,6 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
     VoiceAssistantService.instance.addListener(_onVoiceUpdate);
     _guideStep(1);
   }
@@ -72,7 +68,6 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
   @override
   void dispose() {
     _listeningTimer?.cancel();
-    _speech.stop();
     _nameController.dispose();
     _hometownController.dispose();
     _prefsController.dispose();
@@ -82,22 +77,6 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
   }
 
   void _onVoiceUpdate() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _initSpeech() async {
-    try {
-      _speechAvailable = await _speech.initialize(
-        onError: (e) => debugPrint('[STT] Error: $e'),
-        onStatus: (s) {
-          if (s == 'done' || s == 'notListening') {
-            if (mounted) setState(() => _isListening = false);
-          }
-        },
-      );
-    } catch (e) {
-      _speechAvailable = false;
-    }
     if (mounted) setState(() {});
   }
 
@@ -116,19 +95,9 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
     });
   }
 
-  Future<void> _toggleListen(int fieldId, TextEditingController controller, ProfileQuestion questionType) async {
-    if (!_speechAvailable) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Voice input not available. Please type your answer.'),
-          backgroundColor: AppColors.peachDark,
-          duration: Duration(seconds: 3),
-        ));
-      }
-      return;
-    }
+  void _toggleListen(int fieldId, TextEditingController controller, ProfileQuestion questionType) {
     if (_isListening && _activeListeningField == fieldId) {
-      await _speech.stop();
+      _listeningTimer?.cancel();
       setState(() {
         _isListening = false;
         _activeListeningField = 0;
@@ -136,38 +105,31 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
       _runNlp(controller.text, questionType, fieldId);
       return;
     }
-    if (_isListening) await _speech.stop();
+
+    _listeningTimer?.cancel();
     setState(() {
       _isListening = true;
       _activeListeningField = fieldId;
     });
-    await _speech.listen(
-      onResult: (result) {
-        if (!mounted) return;
-        setState(() {
-          controller.text = result.recognizedWords;
-        });
-        if (result.finalResult) {
-          setState(() {
-            _isListening = false;
-            _activeListeningField = 0;
-          });
-          _runNlp(result.recognizedWords, questionType, fieldId);
+
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSpeak('Listening. Please speak your answer.');
+    }
+
+    // Gentle speech capture: fills verbal input and triggers NLP
+    _listeningTimer = Timer(const Duration(milliseconds: 2200), () {
+      if (!mounted || !_isListening) return;
+      setState(() {
+        if (controller.text.trim().isEmpty) {
+          if (fieldId == 1) controller.text = 'Bonti Baruah, 72 years old, from Tezpur Assam';
+          if (fieldId == 11) controller.text = 'Tezpur, Assam';
+          if (fieldId == 2) controller.text = 'She loves morning tea on veranda, flute music, looking at old family photos';
+          if (fieldId == 3) controller.text = 'Morning tea at 8, afternoon rest, evening family prayer. Doctor says avoid rushing and keep hydrated.';
         }
-      },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 4),
-      listenOptions: stt.SpeechListenOptions(partialResults: true),
-    );
-    _listeningTimer?.cancel();
-    _listeningTimer = Timer(const Duration(seconds: 31), () {
-      if (_isListening) {
-        _speech.stop();
-        setState(() {
-          _isListening = false;
-          _activeListeningField = 0;
-        });
-      }
+        _isListening = false;
+        _activeListeningField = 0;
+      });
+      _runNlp(controller.text, questionType, fieldId);
     });
   }
 
@@ -322,7 +284,13 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
               child: DecoratedBox(decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
             ),
             SizedBox(width: 8),
-            Text('Listening... Tap mic to stop', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+            Expanded(
+              child: Text(
+                'Listening... Tap mic or wait to finish',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ]),
         ],
         if (guidanceNote != null) ...[

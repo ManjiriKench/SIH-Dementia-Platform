@@ -190,12 +190,15 @@ class _ActivityCompletionScreenState extends State<ActivityCompletionScreen> {
                         children: [
                           const Icon(Icons.schedule_rounded, size: 18, color: AppColors.forestPrimary),
                           const SizedBox(width: 8),
-                          Text(
-                            'Time Spent: $durationFormatted',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                          Flexible(
+                            child: Text(
+                              'Time Spent: $durationFormatted',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
