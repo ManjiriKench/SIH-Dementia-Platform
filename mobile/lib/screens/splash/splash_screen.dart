@@ -57,7 +57,11 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _logoController.forward();
-    _checkUserFlow();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkUserFlow();
+      }
+    });
   }
 
   Future<void> _checkUserFlow() async {
