@@ -3,12 +3,17 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../models/activity_item.dart';
+import '../../models/appointment.dart';
 import '../../models/cognitive_domain.dart';
 import '../../models/dashboard_data.dart';
+import '../../models/medication.dart';
+import '../../services/alert_service.dart';
+import '../../services/care_plan_service.dart';
 import '../../services/feedback_service.dart';
 import '../../services/memory_service.dart';
 import '../../services/mock_data_repository.dart';
 import '../../services/profile_service.dart';
+import '../../services/recommendation_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/caregiver/trend_bar_chart.dart';
 import '../../widgets/common/calm_card.dart';
@@ -21,6 +26,7 @@ import '../activities/activities_catalog_sheet.dart';
 /// Provides a comprehensive, compassionate window into the loved one's comfort,
 /// 6-domain exposure, activity history, memory vault, daily observations,
 /// and secondary wellness/routine reminders without clinical or diagnostic pressure.
+/// Organized cleanly with an Alert Banner and 5 collapsible section cards.
 class CaregiverDashboardScreen extends StatefulWidget {
   const CaregiverDashboardScreen({super.key});
 
@@ -33,7 +39,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     'Morning Hydration & Assam Tea (8:30 AM)': true,
     'Doctor’s Recommended Gentle Walk (10:00 AM)': true,
     'Afternoon Quiet Rest & Veranda Pause (2:00 PM)': true,
-    'Evening Medication & Family Prayer (7:00 PM)': true,
+    'Evening Family Song & Prayer (7:00 PM)': true,
   };
 
   @override
@@ -42,6 +48,9 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     FeedbackService.instance.addListener(_onServiceUpdate);
     ProfileService.instance.addListener(_onServiceUpdate);
     SessionService.instance.addListener(_onServiceUpdate);
+    AlertService.instance.addListener(_onServiceUpdate);
+    CarePlanService.instance.addListener(_onServiceUpdate);
+    RecommendationService.instance.addListener(_onServiceUpdate);
   }
 
   void _onServiceUpdate() {
@@ -53,7 +62,181 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     FeedbackService.instance.removeListener(_onServiceUpdate);
     ProfileService.instance.removeListener(_onServiceUpdate);
     SessionService.instance.removeListener(_onServiceUpdate);
+    AlertService.instance.removeListener(_onServiceUpdate);
+    CarePlanService.instance.removeListener(_onServiceUpdate);
+    RecommendationService.instance.removeListener(_onServiceUpdate);
     super.dispose();
+  }
+
+  void _showAddMedicationDialog() {
+    final nameCtrl = TextEditingController();
+    final dosageCtrl = TextEditingController();
+    final timingCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.backgroundWarm,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Row(
+          children: [
+            Icon(Icons.medication_outlined, color: AppColors.forestPrimary),
+            SizedBox(width: 8),
+            Text('Add Medication', style: AppTypography.caregiverHeading),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Medication Name',
+                  hintText: 'e.g. Donepezil',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: dosageCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Dosage',
+                  hintText: 'e.g. 5mg or 1 capsule',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: timingCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Timing',
+                  hintText: 'e.g. Morning after breakfast',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.forestPrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              if (name.isNotEmpty) {
+                CarePlanService.instance.addMedication(
+                  Medication(
+                    id: 'med_${DateTime.now().millisecondsSinceEpoch}',
+                    name: name,
+                    dosage: dosageCtrl.text.trim().isEmpty ? 'As prescribed' : dosageCtrl.text.trim(),
+                    timing: timingCtrl.text.trim().isEmpty ? 'Daily' : timingCtrl.text.trim(),
+                  ),
+                );
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save Medication'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddAppointmentDialog() {
+    final titleCtrl = TextEditingController();
+    final doctorCtrl = TextEditingController();
+    final locationCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.backgroundWarm,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Row(
+          children: [
+            Icon(Icons.calendar_month_outlined, color: AppColors.forestPrimary),
+            SizedBox(width: 8),
+            Text('Add Appointment', style: AppTypography.caregiverHeading),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Appointment Purpose',
+                  hintText: 'e.g. Memory Clinic Routine Checkup',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: doctorCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Doctor / Specialist',
+                  hintText: 'e.g. Dr. Sharma (Neurologist)',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: locationCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Location / Hospital',
+                  hintText: 'e.g. GMCH Guwahati',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.forestPrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final title = titleCtrl.text.trim();
+              if (title.isNotEmpty) {
+                CarePlanService.instance.addAppointment(
+                  Appointment(
+                    id: 'appt_${DateTime.now().millisecondsSinceEpoch}',
+                    title: title,
+                    doctorName: doctorCtrl.text.trim().isEmpty ? 'Consultant' : doctorCtrl.text.trim(),
+                    location: locationCtrl.text.trim().isEmpty ? 'Local Clinic' : locationCtrl.text.trim(),
+                    scheduledAt: DateTime.now().add(const Duration(days: 7)),
+                  ),
+                );
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save Appointment'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddReminderDialog() {
@@ -85,10 +268,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final text = controller.text.trim();
@@ -136,7 +316,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
 
     // 2. Calculate today's completions for weekly consistency
     final now = DateTime.now();
-    final todayWeekday = now.weekday; // 1 = Mon, 7 = Sun
+    final todayWeekday = now.weekday;
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final todayLabel = dayLabels[todayWeekday - 1];
 
@@ -190,10 +370,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.forestPrimary,
@@ -227,6 +404,10 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     final patientName = patient.preferredName;
     final dashboardData = _buildDynamicDashboardData(patientName);
     final feedbackList = FeedbackService.instance.feedbackList;
+    final activeAlerts = AlertService.instance.activeAlerts;
+    final medications = CarePlanService.instance.medications;
+    final appointments = CarePlanService.instance.upcomingAppointments;
+    final activityInsights = RecommendationService.instance.getInsightsForCaregiver();
     MemoryService.instance.initialize();
     final memories = MemoryService.instance.memories;
 
@@ -296,40 +477,118 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 14.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Patient Profile Summary Card
+              // 1. ACTIVE ALERTS BANNER (Topmost if stress/frustration raised)
+              if (activeAlerts.isNotEmpty) ...[
+                ...activeAlerts.map((alert) {
+                  final timeFormatted = '${alert.time.hour.toString().padLeft(2, '0')}:${alert.time.minute.toString().padLeft(2, '0')}';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.errorGentle, width: 1.5),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFEE2E2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.warning_amber_rounded, color: AppColors.errorGentle, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Gentle Attention Needed',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: AppColors.errorGentle,
+                                    ),
+                                  ),
+                                  Text(
+                                    timeFormatted,
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Discomfort or stress was noted during ${alert.activityTitle} (${alert.reason}). Consider checking in with a warm beverage or quiet companionship.',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton.icon(
+                                  onPressed: () => AlertService.instance.clearAlert(alert.id),
+                                  icon: const Icon(Icons.check, size: 16, color: AppColors.forestPrimary),
+                                  label: const Text(
+                                    'Acknowledge & Clear',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.forestPrimary),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      side: const BorderSide(color: AppColors.borderSoft),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 6),
+              ],
+
+              // 2. Patient Profile Summary Card
               CalmCard(
                 borderColor: AppColors.forestPrimary.withValues(alpha: 0.3),
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Container(
-                          width: 58,
-                          height: 58,
+                          width: 52,
+                          height: 52,
                           decoration: const BoxDecoration(
                             color: AppColors.surfaceWarm,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.person, size: 36, color: AppColors.forestPrimary),
+                          child: const Icon(Icons.person, size: 32, color: AppColors.forestPrimary),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(patientName, style: AppTypography.caregiverHeading),
-                              const SizedBox(height: 2),
                               Text(
                                 '${patient.ageRange} • ${patient.relationshipToCaregiver}',
                                 style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                               ),
-                              const SizedBox(height: 2),
                               Text(
                                 'Comfort: Large text • ${patient.hearingSupport.replaceAll("_", " ")}',
                                 style: AppTypography.caregiverCaption,
@@ -346,12 +605,12 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    const Divider(color: AppColors.borderSoft),
                     const SizedBox(height: 10),
+                    const Divider(color: AppColors.borderSoft),
+                    const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
-                      runSpacing: 6,
+                      runSpacing: 4,
                       children: [
                         ...patient.interestsAndHobbies.take(3).map((h) => Chip(
                               label: Text(h, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
@@ -371,9 +630,9 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Quick Actions Bar
+              // 3. Quick Actions Row
               Row(
                 children: [
                   Expanded(
@@ -381,7 +640,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                       label: "Today's Journey",
                       icon: Icons.play_arrow,
                       variant: ElderButtonVariant.primary,
-                      height: 50,
+                      height: 48,
                       onPressed: () {
                         Navigator.of(context).pushNamed(AppRoutes.todaysJourney);
                       },
@@ -390,256 +649,413 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElderButton(
-                      label: 'All 8 Activities',
-                      icon: Icons.grid_view,
+                      label: 'Memory Space (${memories.length})',
+                      icon: Icons.photo_library_outlined,
                       variant: ElderButtonVariant.peach,
-                      height: 50,
-                      onPressed: () => ActivitiesCatalogSheet.show(context),
+                      height: 48,
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.memoryVault);
+                      },
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Personal Memory Space Tile
-              CalmCard(
-                backgroundColor: AppColors.surfaceWarm,
-                padding: const EdgeInsets.all(16),
-                onTap: () {
-                  Navigator.of(context).pushNamed(AppRoutes.memoryVault);
-                },
-                child: Row(
+              // 4. FIVE COLLAPSIBLE SECTION CARDS
+
+              // SECTION 1: 📊 Insights (Weekly chart, Domain exposure, Per-activity engagement)
+              _DashboardSectionCard(
+                title: 'Activity Insights & Engagement',
+                icon: Icons.insights_rounded,
+                initialExpanded: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.photo_library_outlined, size: 28, color: AppColors.forestPrimary),
+                    TrendBarChart(weeklyData: dashboardData.weeklyConsistency),
+                    const SizedBox(height: 16),
+
+                    // Domain exposure header
+                    Row(
+                      children: [
+                        const Icon(Icons.pie_chart_outline_rounded, color: AppColors.forestPrimary, size: 18),
+                        const SizedBox(width: 6),
+                        const Expanded(
+                          child: Text('Domain Balance This Week', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.domainOverview),
+                          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                          child: const Text('Explain', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Personal Memory Space', style: AppTypography.caregiverSubheading),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${memories.length} cherished photos, songs, and stories anchored into games.',
-                            style: AppTypography.caregiverCaption,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 6),
+                    ...dashboardData.domainExposure.map((exposure) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _getDomainColor(exposure.domain),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(exposure.domainName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            ),
+                            Text(
+                              '${exposure.sessionsCountThisWeek} sessions',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+
+                    const SizedBox(height: 16),
+                    const Divider(color: AppColors.borderSoft),
+                    const SizedBox(height: 8),
+
+                    // Per-Activity engagement scores (Caregiver view only)
+                    const Row(
+                      children: [
+                        Icon(Icons.psychology_outlined, color: AppColors.forestPrimary, size: 18),
+                        SizedBox(width: 6),
+                        Text('Per-Activity Comfort (Private to Caregiver)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ],
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.forestPrimary),
+                    const SizedBox(height: 8),
+                    ...activityInsights.map((insight) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceWarm.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.borderSoft),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(insight.activityTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: insight.skipRate > 35 ? AppColors.peachLight : AppColors.sageLight,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    insight.engagementLevel,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: insight.skipRate > 35 ? AppColors.warningWarm : AppColors.forestDark,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(insight.recommendationNote, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // Weekly Activity Consistency Bar Chart
-              TrendBarChart(weeklyData: dashboardData.weeklyConsistency),
-
-              const SizedBox(height: 24),
-
-              // 6 Cognitive Domains Overview (Non-diagnostic framing)
-              Row(
-                children: [
-                  const Icon(Icons.pie_chart_outline_rounded, color: AppColors.forestPrimary, size: 22),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text('Six Cognitive Domains Covered', style: AppTypography.caregiverHeading),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.domainOverview),
-                    child: const Text('Explain', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Natural areas of engagement. Never medical tests or diagnostic scores.',
-                style: AppTypography.caregiverCaption,
-              ),
               const SizedBox(height: 12),
 
-              ...dashboardData.domainExposure.map((exposure) {
-                return CalmCard(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: _getDomainColor(exposure.domain),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(exposure.domainName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                            Text(exposure.comfortSummary, style: AppTypography.caregiverCaption),
-                          ],
-                        ),
-                      ),
-                      Container(
+              // SECTION 2: ⏰ Routine Reminders
+              _DashboardSectionCard(
+                title: 'Daily Routine Reminders',
+                icon: Icons.alarm_on_rounded,
+                trailingBadge: IconButton(
+                  icon: const Icon(Icons.add_circle_outline, color: AppColors.forestPrimary, size: 20),
+                  tooltip: 'Add Reminder',
+                  onPressed: _showAddReminderDialog,
+                ),
+                child: Column(
+                  children: [
+                    ..._routineReminders.entries.map((entry) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.borderSoft),
+                        ),
+                        child: CheckboxListTile(
+                          value: entry.value,
+                          activeColor: AppColors.forestPrimary,
+                          title: Text(
+                            entry.key,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              decoration: entry.value ? TextDecoration.none : TextDecoration.lineThrough,
+                              color: entry.value ? AppColors.textPrimary : AppColors.textTertiary,
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          onChanged: (val) {
+                            setState(() {
+                              _routineReminders[entry.key] = val ?? false;
+                            });
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // SECTION 3: 💊 Medications
+              _DashboardSectionCard(
+                title: 'Medications Plan',
+                icon: Icons.medication_outlined,
+                trailingBadge: IconButton(
+                  icon: const Icon(Icons.add_circle_outline, color: AppColors.forestPrimary, size: 20),
+                  tooltip: 'Add Medication',
+                  onPressed: _showAddMedicationDialog,
+                ),
+                child: Column(
+                  children: [
+                    if (medications.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('No medications added yet.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      )
+                    else
+                      ...medications.map((med) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.borderSoft),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  med.isTakenToday ? Icons.check_circle : Icons.radio_button_unchecked,
+                                  color: med.isTakenToday ? AppColors.forestPrimary : AppColors.borderSoft,
+                                ),
+                                onPressed: () => CarePlanService.instance.toggleMedicationTaken(med.id),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      med.name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        decoration: med.isTakenToday ? TextDecoration.lineThrough : null,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${med.dosage} • ${med.timing}',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.textTertiary),
+                                onPressed: () => CarePlanService.instance.removeMedication(med.id),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // SECTION 4: 📅 Doctor Appointments
+              _DashboardSectionCard(
+                title: 'Doctor Appointments',
+                icon: Icons.calendar_month_outlined,
+                trailingBadge: IconButton(
+                  icon: const Icon(Icons.add_circle_outline, color: AppColors.forestPrimary, size: 20),
+                  tooltip: 'Add Appointment',
+                  onPressed: _showAddAppointmentDialog,
+                ),
+                child: Column(
+                  children: [
+                    if (appointments.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('No upcoming appointments scheduled.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      )
+                    else
+                      ...appointments.map((appt) {
+                        final dateStr = '${appt.scheduledAt.day}/${appt.scheduledAt.month}/${appt.scheduledAt.year}';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.borderSoft),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceWarm,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.event_available, color: AppColors.forestPrimary, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(appt.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Text('${appt.doctorName} • $dateStr', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                    if (appt.location != null)
+                                      Text(appt.location!, style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.textTertiary),
+                                onPressed: () => CarePlanService.instance.removeAppointment(appt.id),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // SECTION 5: 📝 Observations & Feedback
+              _DashboardSectionCard(
+                title: 'Caregiver Observations & Feedback',
+                icon: Icons.rate_review_outlined,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (feedbackList.isEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceWarm,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.peach),
                         ),
-                        child: Text(
-                          '${exposure.sessionsCountThisWeek} sessions',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.forestDark),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 24),
-
-              // Secondary Routine & Wellness Reminders
-              Row(
-                children: [
-                  const Icon(Icons.alarm_on_rounded, color: AppColors.forestPrimary, size: 22),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text('Daily Routine & Wellness Reminders', style: AppTypography.caregiverHeading),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: AppColors.forestPrimary),
-                    tooltip: 'Add reminder',
-                    onPressed: _showAddReminderDialog,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Secondary support for hydration, walks, and medications.',
-                style: AppTypography.caregiverCaption,
-              ),
-              const SizedBox(height: 12),
-
-              ..._routineReminders.entries.map((entry) {
-                return CalmCard(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: CheckboxListTile(
-                    value: entry.value,
-                    activeColor: AppColors.forestPrimary,
-                    title: Text(
-                      entry.key,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        decoration: entry.value ? TextDecoration.none : TextDecoration.lineThrough,
-                        color: entry.value ? AppColors.textPrimary : AppColors.textTertiary,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    onChanged: (val) {
-                      setState(() {
-                        _routineReminders[entry.key] = val ?? false;
-                      });
-                    },
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 24),
-
-              // Recent Daily Observations & Caregiver Feedback
-              Row(
-                children: [
-                  const Icon(Icons.rate_review_outlined, color: AppColors.forestPrimary, size: 22),
-                  const SizedBox(width: 8),
-                  const Text('Recent Caregiver Observations', style: AppTypography.caregiverHeading),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Observations provided after recent sessions that shape upcoming recommendations.',
-                style: AppTypography.caregiverCaption,
-              ),
-              const SizedBox(height: 12),
-
-              if (feedbackList.isEmpty)
-                CalmCard(
-                  padding: const EdgeInsets.all(18),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.note_alt_outlined, color: AppColors.textTertiary, size: 24),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'No session observations submitted today. Observations will appear here after finishing activities.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverFeedback),
-                        child: const Text('Add Now'),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                ...feedbackList.take(3).map((fb) {
-                  return CalmCard(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Row(
                           children: [
-                            Wrap(
-                              spacing: 6,
-                              children: fb.observationTags.map((tag) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.sageLight,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    tag,
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.forestDark),
-                                  ),
-                                );
-                              }).toList(),
+                            const Icon(Icons.pending_actions_rounded, color: AppColors.forestPrimary, size: 22),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Pending session observation. Sharing observations adapts future activity selections.',
+                                style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                              ),
                             ),
-                            Text(
-                              'Comfortable: ${fb.comfortRating}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.forestPrimary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverFeedback),
+                              child: const Text('Fill Now'),
                             ),
                           ],
                         ),
-                        if (fb.whatHelped != null && fb.whatHelped!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            '"${fb.whatHelped}"',
-                            style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppColors.textPrimary),
+                      ),
+                    ] else ...[
+                      ...feedbackList.take(3).map((fb) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.borderSoft),
                           ),
-                        ],
-                      ],
-                    ),
-                  );
-                }),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Wrap(
+                                    spacing: 6,
+                                    children: fb.observationTags.map((tag) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.sageLight,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.forestDark),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                  Text(
+                                    'Rating: ${fb.comfortRating}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              if (fb.whatHelped != null && fb.whatHelped!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  '"${fb.whatHelped}"',
+                                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.textPrimary),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverFeedback),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Add Observation', style: TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               Center(
                 child: TextButton.icon(
@@ -658,7 +1074,6 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                   },
                 ),
               ),
-
               const SizedBox(height: 16),
             ],
           ),
@@ -682,5 +1097,94 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
       case CognitiveDomainType.visuospatial:
         return AppColors.domainVisuospatial;
     }
+  }
+}
+
+/// Expandable and collapsible card component for clean caregiver dashboard sections.
+class _DashboardSectionCard extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+  final Widget? trailingBadge;
+  final bool initialExpanded;
+
+  const _DashboardSectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+    this.trailingBadge,
+    this.initialExpanded = false,
+  });
+
+  @override
+  State<_DashboardSectionCard> createState() => _DashboardSectionCardState();
+}
+
+class _DashboardSectionCardState extends State<_DashboardSectionCard> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initialExpanded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceWarm,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(widget.icon, size: 20, color: AppColors.forestPrimary),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                    ),
+                  ),
+                  if (widget.trailingBadge != null) widget.trailingBadge!,
+                  Icon(
+                    _isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    color: AppColors.forestPrimary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: widget.child,
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
   }
 }
