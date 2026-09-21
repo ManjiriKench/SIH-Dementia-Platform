@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
@@ -6,6 +7,7 @@ import '../../core/navigation/app_routes.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
+import '../../widgets/common/language_toggle_widget.dart';
 
 /// Role selection gateway routing to Caregiver Onboarding or Patient Daily Journey.
 class RoleSelectionScreen extends StatefulWidget {
@@ -20,6 +22,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   void initState() {
     super.initState();
     ProfileService.instance.addListener(_onProfileUpdated);
+    VoiceAssistantService.instance.addListener(_onProfileUpdated);
+    // Restore last guide mode preference
+    VoiceAssistantService.instance.loadGuideMode();
   }
 
   void _onProfileUpdated() {
@@ -29,6 +34,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   void dispose() {
     ProfileService.instance.removeListener(_onProfileUpdated);
+    VoiceAssistantService.instance.removeListener(_onProfileUpdated);
     super.dispose();
   }
 
@@ -166,19 +172,91 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final hasProfile = ProfileService.instance.hasProfile;
+    final isGuideMode = VoiceAssistantService.instance.isGuideMode;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWarm,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.forestPrimary,
+            size: 28,
+          ),
+          tooltip: 'Back to Smriti Start',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacementNamed(AppRoutes.splash);
+            }
+          },
+        ),
+        actions: [
+          // ════════════════════════════════════════════════
+          // SINGLE VOICE ASSISTANCE TOGGLE — only button in whole app
+          // Once ON, guides the patient through the complete session
+          // ════════════════════════════════════════════════
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                color: isGuideMode
+                    ? AppColors.forestPrimary
+                    : AppColors.surfaceWarm,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isGuideMode ? AppColors.forestPrimary : AppColors.borderSoft,
+                  width: 1.5,
+                ),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () => VoiceAssistantService.instance.toggleGuideMode(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isGuideMode ? Icons.volume_up_rounded : Icons.volume_off_outlined,
+                        size: 18,
+                        color: isGuideMode ? Colors.white : AppColors.forestPrimary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isGuideMode ? 'Voice: ON' : 'Voice Help',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isGuideMode ? Colors.white : AppColors.forestPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const LanguageToggleWidget(compact: true),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               // Top Offline Reassurance Banner
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                constraints: const BoxConstraints(maxWidth: 320),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceWarm,
                   borderRadius: BorderRadius.circular(20),
@@ -189,26 +267,47 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   children: [
                     const Icon(Icons.shield_outlined, size: 18, color: AppColors.sageDark),
                     const SizedBox(width: 8),
-                    Text(
-                      AppStrings.get('offline_note'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                    Flexible(
+                      child: Text(
+                        AppStrings.get('offline_note'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
-              // Welcome Text
-              Text(
-                AppStrings.get('app_title'),
-                style: AppTypography.patientHero.copyWith(
-                  color: AppColors.forestPrimary,
-                  fontSize: 30,
+              const SizedBox(height: 20),
+              // Welcome Text with Start navigation shortcut
+              Tooltip(
+                message: 'Back to Smriti Start',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      Navigator.of(context).pushReplacementNamed(AppRoutes.splash);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Text(
+                      AppStrings.get('app_title'),
+                      style: AppTypography.patientHero.copyWith(
+                        color: AppColors.forestPrimary,
+                        fontSize: 28,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
@@ -216,12 +315,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 style: AppTypography.patientBody,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               // Primary Action: Caregiver
               CalmCard(
                 borderColor: AppColors.forestPrimary,
                 borderWidth: 1.8,
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(18),
                 onTap: () {
                   if (hasProfile) {
                     Navigator.of(context).pushNamed(AppRoutes.caregiverDashboard);
@@ -232,18 +331,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.forestPrimary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
                         Icons.favorite,
-                        size: 34,
+                        size: 30,
                         color: AppColors.forestPrimary,
                       ),
                     ),
-                    const SizedBox(width: 18),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +350,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           Text(
                             AppStrings.get('role_caregiver'),
                             style: AppTypography.patientTitle.copyWith(
-                              fontSize: 20,
+                              fontSize: 19,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -265,33 +364,34 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 20, color: AppColors.forestPrimary),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.forestPrimary),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               // Secondary Action: Patient
               CalmCard(
                 backgroundColor: hasProfile ? Colors.white : AppColors.surfaceWarm.withValues(alpha: 0.6),
                 borderColor: hasProfile ? AppColors.sage : AppColors.borderSoft,
                 borderWidth: 1.6,
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(18),
                 onTap: _handlePatientEntry,
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.sage.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
                         Icons.person_outline,
-                        size: 34,
+                        size: 30,
                         color: AppColors.sageDark,
                       ),
                     ),
-                    const SizedBox(width: 18),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +399,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           Text(
                             AppStrings.get('role_patient'),
                             style: AppTypography.patientTitle.copyWith(
-                              fontSize: 20,
+                              fontSize: 19,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -313,40 +413,51 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_ios,
-                      size: 20,
+                      size: 18,
                       color: hasProfile ? AppColors.sageDark : AppColors.textTertiary,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               // Language switch shortcut
-              TextButton.icon(
-                icon: const Icon(Icons.language, size: 20, color: AppColors.forestPrimary),
-                label: const Text(
-                  'Change Language / भाषा / ভাষা',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.forestPrimary,
+              Container(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: TextButton.icon(
+                  icon: const Icon(Icons.language, size: 18, color: AppColors.forestPrimary),
+                  label: const Text(
+                    'Change Language / भाषा / ভাষা',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.forestPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  onPressed: () {
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.language);
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(context).pushReplacementNamed(AppRoutes.language);
-                },
               ),
               // Plain-language privacy link
-              TextButton(
-                onPressed: _showPrivacySheet,
-                child: const Text(
-                  'Plain-Language Privacy & Zero Medical Claims Notice',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                    decoration: TextDecoration.underline,
+              Container(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: TextButton(
+                  onPressed: _showPrivacySheet,
+                  child: const Text(
+                    'Plain-Language Privacy & Zero Medical Claims Notice',
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ),
