@@ -236,31 +236,61 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const GentleBackButton(),
-        title: const Text('Caregiver Dashboard', style: AppTypography.caregiverHeading),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Caregiver Dashboard', style: AppTypography.caregiverHeading),
+        ),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 4.0),
-            child: LanguageToggleWidget(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt_rounded, color: AppColors.forestPrimary),
-            tooltip: 'Reset Demo Profile',
-            onPressed: _confirmResetDemo,
+            child: LanguageToggleWidget(compact: true),
           ),
           IconButton(
             icon: const Icon(Icons.grid_view_rounded, color: AppColors.forestPrimary),
             tooltip: 'All 8 Activities',
             onPressed: () => ActivitiesCatalogSheet.show(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.tune, color: AppColors.forestPrimary),
-            tooltip: '15 System States',
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.systemStatesShowcase),
-          ),
-          IconButton(
-            icon: const Icon(Icons.science_outlined, color: AppColors.forestPrimary),
-            tooltip: 'AI & Backend Diagnostics',
-            onPressed: () => Navigator.of(context).pushNamed('/backend_test'),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: AppColors.forestPrimary),
+            tooltip: 'More options & diagnostics',
+            onSelected: (val) {
+              if (val == 'reset') _confirmResetDemo();
+              if (val == 'states') Navigator.of(context).pushNamed(AppRoutes.systemStatesShowcase);
+              if (val == 'diagnostics') Navigator.of(context).pushNamed('/backend_test');
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'reset',
+                child: Row(
+                  children: [
+                    Icon(Icons.restart_alt_rounded, size: 20, color: AppColors.forestPrimary),
+                    SizedBox(width: 10),
+                    Text('Reset Demo Profile'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'states',
+                child: Row(
+                  children: [
+                    Icon(Icons.tune, size: 20, color: AppColors.forestPrimary),
+                    SizedBox(width: 10),
+                    Text('15 System States'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'diagnostics',
+                child: Row(
+                  children: [
+                    Icon(Icons.science_outlined, size: 20, color: AppColors.forestPrimary),
+                    SizedBox(width: 10),
+                    Text('AI & Diagnostics'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

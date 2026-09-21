@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/audio/voice_assistant_service.dart';
+import '../../core/audio/activity_voice_scripts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -29,6 +31,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
   final double _totalSeconds = 180.0;
   Timer? _playbackTimer;
   bool _isSpeakingPrompt = false;
+  late final GameSafetyManager _safetyManager;
 
   final List<Map<String, dynamic>> _songs = [
     {
@@ -67,7 +70,26 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Music & Memory');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Music & Memory',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _nextSong,
+    );
+    _safetyManager.onQuestionStart();
     _startPlayback();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (VoiceAssistantService.instance.isGuideMode && _songs.isNotEmpty) {
+        VoiceAssistantService.instance.guideSequence([
+          ...ActivityVoiceScripts.musicAndMemoryIntro,
+          ActivityVoiceScripts.musicAndMemorySongStarted(_songs[0]['title'] as String),
+        ]);
+        Timer(const Duration(seconds: 4), () {
+          if (mounted && VoiceAssistantService.instance.isGuideMode) {
+            VoiceAssistantService.instance.guideSpeak(_songs[0]['prompt'] as String);
+          }
+        });
+      }
+    });
   }
 
   void _startPlayback() {
@@ -101,6 +123,30 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
     if (mounted) setState(() => _isSpeakingPrompt = false);
   }
 
+  void _endGameGracefully() {
+    _playbackTimer?.cancel();
+    SessionService.instance.completeSession();
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.musicAndMemoryComplete);
+    }
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Music & Memory',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _nextSong();
+    }
+  }
+
   void _nextSong() {
     SystemSound.play(SystemSoundType.click);
     HapticFeedback.mediumImpact();
@@ -110,10 +156,26 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
         _currentSongIndex++;
         _playbackSeconds = 0.0;
       });
+      _safetyManager.onQuestionStart();
       _startPlayback();
+      if (VoiceAssistantService.instance.isGuideMode) {
+        final next = _songs[_currentSongIndex];
+        VoiceAssistantService.instance.guideSequence([
+          ActivityVoiceScripts.musicAndMemoryBetweenSongs,
+          ActivityVoiceScripts.musicAndMemorySongStarted(next['title'] as String),
+        ]);
+        Timer(const Duration(seconds: 4), () {
+          if (mounted && VoiceAssistantService.instance.isGuideMode) {
+            VoiceAssistantService.instance.guideSpeak(next['prompt'] as String);
+          }
+        });
+      }
     } else {
       // Finished all songs
       SessionService.instance.completeSession();
+      if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.musicAndMemoryComplete);
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(
@@ -126,6 +188,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
 
   @override
   void dispose() {
+    _safetyManager.dispose();
     _playbackTimer?.cancel();
     super.dispose();
   }
@@ -156,12 +219,17 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Music & Memory', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Music & Memory', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -419,6 +487,15 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
                 variant: ElderButtonVariant.primary,
                 height: 56,
                 onPressed: _nextSong,
+              ),
+
+              const SizedBox(height: 12),
+
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                  label: 'Skip this melody',
+                ),
               ),
 
               const SizedBox(height: 10),

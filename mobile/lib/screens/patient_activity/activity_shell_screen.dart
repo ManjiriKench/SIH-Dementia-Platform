@@ -168,8 +168,12 @@ class _ActivityShellScreenState extends State<ActivityShellScreen> {
       backgroundColor: AppColors.backgroundWarm,
       appBar: AppBar(
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: Text(_controller.activityTitle, style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(_controller.activityTitle, style: AppTypography.caregiverSubheading),
+        ),
         actions: [
           // Round indicator
           Center(

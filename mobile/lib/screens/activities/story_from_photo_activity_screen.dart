@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../models/memory_item.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
@@ -27,6 +28,7 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
   bool _isSpeaking = false;
   bool _isRecordingVoice = false;
   late List<Map<String, dynamic>> _stories;
+  late final GameSafetyManager _safetyManager;
 
   final List<Map<String, dynamic>> _defaultStories = const [
     {
@@ -74,7 +76,39 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Story from Photo');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Story from Photo',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _advancePrompt,
+    );
+    _safetyManager.onQuestionStart();
     _initStories();
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Story from Photo',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _advancePrompt();
+    }
   }
 
   void _initStories() {
@@ -168,6 +202,7 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
       setState(() {
         _promptStep++;
       });
+      _safetyManager.onQuestionStart();
     } else {
       // Move to next story or finish
       if (_currentStoryIndex < _stories.length - 1) {
@@ -175,6 +210,7 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
           _currentStoryIndex++;
           _promptStep = 0;
         });
+        _safetyManager.onQuestionStart();
       } else {
         SessionService.instance.completeSession();
         Navigator.of(context).pushReplacement(
@@ -206,12 +242,17 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Story from Photo', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Story from Photo', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -405,6 +446,15 @@ class _StoryFromPhotoActivityScreenState extends State<StoryFromPhotoActivityScr
                 variant: ElderButtonVariant.primary,
                 height: 56,
                 onPressed: _advancePrompt,
+              ),
+
+              const SizedBox(height: 12),
+
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                  label: 'Skip this story step',
+                ),
               ),
 
               const SizedBox(height: 10),

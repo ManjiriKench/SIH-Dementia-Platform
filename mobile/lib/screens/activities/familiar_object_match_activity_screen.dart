@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -45,6 +46,7 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
   int? _hintIndex;
   bool _isChecking = false;
   String? _feedbackText;
+  late final GameSafetyManager _safetyManager;
 
   final List<FamiliarObjectItem> _masterPool = [
     FamiliarObjectItem(
@@ -83,7 +85,46 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Familiar Object Match');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Familiar Object Match',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _onSkipPressed,
+    );
+    _safetyManager.onQuestionStart();
     _setupRound();
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Familiar Object Match',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      if (_currentRound < _totalRounds) {
+        setState(() {
+          _currentRound++;
+          _setupRound();
+        });
+      } else {
+        _endGameGracefully();
+      }
+    }
   }
 
   void _setupRound() {
@@ -139,6 +180,7 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
 
       if (firstBase == secondBase) {
         // Matched!
+        _safetyManager.onAnswerCorrect();
         setState(() {
           first.isMatched = true;
           second.isMatched = true;
@@ -192,6 +234,7 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
               _currentRound++;
               _setupRound();
             });
+            _safetyManager.onQuestionStart();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Lovely! Ready for Round 2 with fresh familiar crafts.'),
@@ -225,12 +268,17 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Familiar Object Match', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Familiar Object Match', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -356,6 +404,12 @@ class _FamiliarObjectMatchActivityScreenState extends State<FamiliarObjectMatchA
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                ),
               ),
               const SizedBox(height: 8),
             ],

@@ -108,8 +108,8 @@ class ActivityCompletionScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Voice celebration message
-              const VoiceInstructionBar(
-                instructionText: 'You did wonderful today. Take a deep breath and relax.',
+              VoiceInstructionBar(
+                instructionText: 'Wonderful effort today with $activityTitle. Take a peaceful breath and relax.',
                 autoPlay: false,
               ),
               const SizedBox(height: 20),

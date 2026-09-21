@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/audio/voice_assistant_service.dart';
+import '../../core/audio/activity_voice_scripts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../models/memory_item.dart';
 import '../../services/memory_service.dart';
 import '../../services/session_service.dart';
@@ -25,6 +27,7 @@ class LookAndTalkActivityScreen extends StatefulWidget {
 class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
   int _currentIndex = 0;
   bool _isSpeaking = false;
+  late final GameSafetyManager _safetyManager;
 
   final List<Map<String, dynamic>> _demoPhotos = [
     {
@@ -73,6 +76,13 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Look & Talk');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Look & Talk',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _nextPhoto,
+    );
+    _safetyManager.onQuestionStart();
+
     // Pre-populate with any personal photos from memory vault if available
     final personalPhotos = MemoryService.instance.getMemoriesByType(MemoryType.photo);
     if (personalPhotos.isNotEmpty) {
@@ -89,6 +99,44 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
         });
       }
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (VoiceAssistantService.instance.isGuideMode && _demoPhotos.isNotEmpty) {
+        VoiceAssistantService.instance.guideSequence([
+          ...ActivityVoiceScripts.lookAndTalkIntro,
+          ActivityVoiceScripts.lookAndTalkPhotoAppeared(_demoPhotos[0]['title'] as String),
+          _demoPhotos[0]['prompt'] as String,
+        ]);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.lookAndTalkComplete);
+    }
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Look & Talk',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _nextPhoto();
+    }
   }
 
   void _speakPrompt(String text) async {
@@ -102,9 +150,21 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
       setState(() {
         _currentIndex++;
       });
+      _safetyManager.onQuestionStart();
+      if (VoiceAssistantService.instance.isGuideMode) {
+        final next = _demoPhotos[_currentIndex];
+        VoiceAssistantService.instance.guideSequence([
+          ActivityVoiceScripts.lookAndTalkBetweenPhotos,
+          ActivityVoiceScripts.lookAndTalkPhotoAppeared(next['title'] as String),
+          next['prompt'] as String,
+        ]);
+      }
     } else {
       // Completed all photos peacefully
       SessionService.instance.completeSession();
+      if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.lookAndTalkComplete);
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(
@@ -133,12 +193,17 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Look & Talk', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Look & Talk', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -308,6 +373,15 @@ class _LookAndTalkActivityScreenState extends State<LookAndTalkActivityScreen> {
                 variant: ElderButtonVariant.primary,
                 height: 56,
                 onPressed: _nextPhoto,
+              ),
+
+              const SizedBox(height: 12),
+
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                  label: 'Skip this photo',
+                ),
               ),
 
               const SizedBox(height: 12),

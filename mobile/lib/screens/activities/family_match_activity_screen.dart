@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/audio/voice_assistant_service.dart';
+import '../../core/audio/activity_voice_scripts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../models/memory_item.dart';
 import '../../services/memory_service.dart';
 import '../../services/profile_service.dart';
@@ -50,6 +53,7 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
   bool _isProcessingMatch = false;
   int? _firstFlippedIndex;
   int? _hintCardIndex;
+  late final GameSafetyManager _safetyManager;
 
   late List<FamilyCardItem> _cards;
 
@@ -86,8 +90,56 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Family Match & Tell');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Family Match & Tell',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _onSkipPressed,
+    );
+    _safetyManager.onQuestionStart();
     _loadFamilyPool();
     _setupRound();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.familyMatchIntro);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.familyMatchComplete);
+    }
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Family Match & Tell',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      if (_currentRound < _totalRounds) {
+        setState(() {
+          _currentRound++;
+          _difficultyPairs = 3;
+          _setupRound();
+        });
+      } else {
+        _endGameGracefully();
+      }
+    }
   }
 
   void _loadFamilyPool() {
@@ -206,6 +258,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
 
     if (_firstFlippedIndex == null) {
       _firstFlippedIndex = index;
+      if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.guideSpeak(ActivityVoiceScripts.familyMatchFirstFlip);
+      }
     } else {
       // Second card flipped, evaluate match
       _isProcessingMatch = true;
@@ -217,6 +272,7 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
 
       if (firstBaseId == secondBaseId) {
         // Matched!
+        _safetyManager.onAnswerCorrect();
         setState(() {
           first.isMatched = true;
           second.isMatched = true;
@@ -227,6 +283,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
         // Show "Tell me something about them" modal
         _showTellMeAboutThemSheet(first);
       } else {
+        if (VoiceAssistantService.instance.isGuideMode) {
+          VoiceAssistantService.instance.guideSpeak(ActivityVoiceScripts.familyMatchNoMatch);
+        }
         // Not matched, flip back gently
         Future.delayed(const Duration(milliseconds: 1200), () {
           if (mounted) {
@@ -243,6 +302,13 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
   }
 
   void _showTellMeAboutThemSheet(FamilyCardItem person) {
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSequence([
+        ActivityVoiceScripts.familyMatchOnMatch(person.personName),
+        'A warm message from ${person.personName}: "${person.memorySnippet}"',
+      ]);
+    }
+
     showModalBottomSheet(
       context: context,
       isDismissible: true,
@@ -289,6 +355,16 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
                       style: AppTypography.caregiverBody,
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.volume_up_rounded, color: AppColors.forestPrimary),
+                    tooltip: 'Hear message',
+                    onPressed: () {
+                      VoiceAssistantService.instance.speak(
+                        'A warm message from ${person.personName}: "${person.memorySnippet}"',
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -318,6 +394,10 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
           _difficultyPairs = 3; // Step up from 2 pairs to 3 pairs gently
           _setupRound();
         });
+        _safetyManager.onQuestionStart();
+        if (VoiceAssistantService.instance.isGuideMode) {
+          VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.familyMatchRound1Complete);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Wonderful! Ready for Round 2 with one more family pair.'),
@@ -328,6 +408,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
       } else {
         // Complete activity
         SessionService.instance.completeSession();
+        if (VoiceAssistantService.instance.isGuideMode) {
+          VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.familyMatchComplete);
+        }
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => const ActivityCompletionScreen(
@@ -341,6 +424,9 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
 
   void _giveCaregiverHint() {
     SessionService.instance.recordHint();
+    if (VoiceAssistantService.instance.isGuideMode) {
+      VoiceAssistantService.instance.guideSpeak(ActivityVoiceScripts.familyMatchHint);
+    }
     // Find an unmatched pair and highlight one
     for (int i = 0; i < _cards.length; i++) {
       if (!_cards[i].isMatched) {
@@ -367,12 +453,17 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Family Match & Tell', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Family Match & Tell', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -499,6 +590,12 @@ class _FamilyMatchActivityScreenState extends State<FamilyMatchActivityScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                ),
               ),
               const SizedBox(height: 8),
             ],

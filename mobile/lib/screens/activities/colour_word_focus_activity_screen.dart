@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../widgets/common/calm_card.dart';
-import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
 import '../../widgets/common/voice_instruction_bar.dart';
 import '../../services/session_service.dart';
@@ -44,11 +44,44 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
   final int _totalRounds = 3;
   String? _feedbackText;
   bool _isSuccess = false;
+  late final GameSafetyManager _safetyManager;
 
   @override
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Colour & Word Focus');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Colour & Word Focus',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _advanceRound,
+    );
+    _safetyManager.onQuestionStart();
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Colour & Word Focus',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _advanceRound();
+    }
   }
 
   final List<ColorItemStimulus> _rounds = const [
@@ -109,6 +142,10 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
     final stimulus = _rounds[_currentRound];
     final isCorrect = selectedColorName == stimulus.correctColorName;
 
+    if (isCorrect) {
+      _safetyManager.onAnswerCorrect();
+    }
+
     setState(() {
       _isSuccess = isCorrect;
       if (isCorrect) {
@@ -135,6 +172,7 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
         _currentRound++;
         _feedbackText = null;
       });
+      _safetyManager.onQuestionStart();
     } else {
       SessionService.instance.completeSession();
       Navigator.of(context).pushReplacement(
@@ -157,12 +195,17 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Colour–Word Focus', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Colour–Word Focus', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -316,12 +359,10 @@ class _ColourWordFocusActivityScreenState extends State<ColourWordFocusActivityS
 
               const SizedBox(height: 24),
 
-              ElderButton(
-                label: 'Skip / Next Round',
-                icon: Icons.arrow_forward,
-                variant: ElderButtonVariant.secondary,
-                height: 52,
-                onPressed: _advanceRound,
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                ),
               ),
 
               const SizedBox(height: 12),

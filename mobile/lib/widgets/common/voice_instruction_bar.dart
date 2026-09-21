@@ -33,7 +33,8 @@ class _VoiceInstructionBarState extends State<VoiceInstructionBar>
 
     VoiceAssistantService.instance.addListener(_handleVoiceUpdate);
 
-    if (widget.autoPlay) {
+    final shouldAutoPlay = widget.autoPlay || VoiceAssistantService.instance.isGuideMode;
+    if (shouldAutoPlay) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         VoiceAssistantService.instance.speak(widget.instructionText);
       });
@@ -47,7 +48,8 @@ class _VoiceInstructionBarState extends State<VoiceInstructionBar>
   @override
   void didUpdateWidget(covariant VoiceInstructionBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.instructionText != widget.instructionText && widget.autoPlay) {
+    final shouldAutoPlay = widget.autoPlay || VoiceAssistantService.instance.isGuideMode;
+    if (oldWidget.instructionText != widget.instructionText && shouldAutoPlay) {
       VoiceAssistantService.instance.speak(widget.instructionText);
     }
   }
@@ -61,16 +63,22 @@ class _VoiceInstructionBarState extends State<VoiceInstructionBar>
 
   @override
   Widget build(BuildContext context) {
-    final isSpeaking = VoiceAssistantService.instance.isSpeaking;
+    final service = VoiceAssistantService.instance;
+    final isSpeaking = service.isSpeaking;
+    final isGuide = service.isGuideMode;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: isSpeaking ? AppColors.sageLight : AppColors.surfaceWarm,
+        color: isSpeaking
+            ? AppColors.sageLight
+            : (isGuide ? AppColors.surfaceWarm : AppColors.surfaceWarm),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isSpeaking ? AppColors.sage : AppColors.borderSoft,
-          width: 1.6,
+          color: isGuide
+              ? AppColors.forestPrimary
+              : (isSpeaking ? AppColors.sage : AppColors.borderSoft),
+          width: isGuide ? 2.0 : 1.6,
         ),
       ),
       child: Row(
@@ -102,12 +110,44 @@ class _VoiceInstructionBarState extends State<VoiceInstructionBar>
           const SizedBox(width: 16),
           // Instruction Subtitle Text
           Expanded(
-            child: Text(
-              widget.instructionText,
-              style: AppTypography.patientInstruction.copyWith(
-                color: isSpeaking ? AppColors.forestDark : AppColors.textPrimary,
-                fontSize: 18,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isGuide) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.successSage,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Voice Guide Active',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.forestPrimary,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                ],
+                Text(
+                  widget.instructionText,
+                  style: AppTypography.patientInstruction.copyWith(
+                    color: isSpeaking ? AppColors.forestDark : AppColors.textPrimary,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),

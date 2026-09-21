@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/exit_activity_button.dart';
@@ -40,6 +41,7 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
   final int _totalRounds = 2;
   RecallPhase _phase = RecallPhase.memorize;
   final Set<String> _selectedItemIds = {};
+  late final GameSafetyManager _safetyManager;
 
   final List<RecallItem> _defaultPool = const [
     RecallItem(id: 'kettle', name: 'Assam Chai Kettle', icon: Icons.emoji_food_beverage_rounded, color: AppColors.domainExecutive),
@@ -58,8 +60,40 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Remember & Recall');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Remember & Recall',
+      onEndGameGracefully: _endGameGracefully,
+      onAutoSkip: _advanceToNextRoundOrComplete,
+    );
+    _safetyManager.onQuestionStart();
     _initPool();
     _setupRound();
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _endGameGracefully() {
+    SessionService.instance.completeSession();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const ActivityCompletionScreen(
+            activityTitle: 'Remember & Recall',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _advanceToNextRoundOrComplete();
+    }
   }
 
   void _initPool() {
@@ -155,6 +189,10 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
   }
 
   void _submitRecall() {
+    final bool allTargetsFound = _targetItems.every((t) => _selectedItemIds.contains(t.id));
+    if (allTargetsFound) {
+      _safetyManager.onAnswerCorrect();
+    }
     setState(() {
       _phase = RecallPhase.feedback;
     });
@@ -165,6 +203,7 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
       _phase = RecallPhase.memorize;
       _selectedItemIds.clear();
     });
+    _safetyManager.onQuestionStart();
   }
 
   void _advanceToNextRoundOrComplete() {
@@ -173,6 +212,7 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
         _currentRound++;
         _setupRound();
       });
+      _safetyManager.onQuestionStart();
     } else {
       SessionService.instance.completeSession();
       Navigator.of(context).pushReplacement(
@@ -195,12 +235,17 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Remember & Recall', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Remember & Recall', style: AppTypography.caregiverSubheading),
+        ),
         actions: [
+          const GuideModeSpeakerBadge(),
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppColors.surfaceWarm,
               borderRadius: BorderRadius.circular(12),
@@ -347,6 +392,12 @@ class _RememberRecallActivityScreenState extends State<RememberRecallActivityScr
                   variant: ElderButtonVariant.primary,
                   height: 56,
                   onPressed: _selectedItemIds.isNotEmpty ? _submitRecall : null,
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: SkipQuestionButton(
+                    onSkip: _onSkipPressed,
+                  ),
                 ),
               ],
 

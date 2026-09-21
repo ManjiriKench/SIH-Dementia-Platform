@@ -6,7 +6,9 @@ import '../../core/constants/app_typography.dart';
 /// Medium-sized language toggle button positioned on the top right.
 /// Allows instant switching between English, Hindi, and Assamese.
 class LanguageToggleWidget extends StatelessWidget {
-  const LanguageToggleWidget({super.key});
+  final bool compact;
+
+  const LanguageToggleWidget({super.key, this.compact = false});
 
   static const List<Map<String, String>> languages = [
     {'code': 'en', 'label': 'English', 'native': 'English', 'sub': 'Standard'},
@@ -15,6 +17,17 @@ class LanguageToggleWidget extends StatelessWidget {
   ];
 
   String _getCurrentDisplay(String code) {
+    if (compact) {
+      switch (code) {
+        case 'as':
+          return 'AS';
+        case 'hi':
+          return 'HI';
+        case 'en':
+        default:
+          return 'EN';
+      }
+    }
     switch (code) {
       case 'as':
         return 'অসমীয়া';
@@ -162,7 +175,10 @@ class LanguageToggleWidget extends StatelessWidget {
             onTap: () => _showLanguageDialog(context),
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 8 : 12,
+                vertical: compact ? 6 : 8,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -181,26 +197,28 @@ class LanguageToggleWidget extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.language,
-                    size: 18,
+                    size: compact ? 16 : 18,
                     color: AppColors.forestPrimary,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: compact ? 4 : 6),
                   Text(
                     _getCurrentDisplay(currentLang),
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: compact ? 12 : 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.forestPrimary,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 18,
-                    color: AppColors.forestPrimary,
-                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: AppColors.forestPrimary,
+                    ),
+                  ],
                 ],
               ),
             ),

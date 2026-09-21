@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// A single patient alert raised by the frustration/anxiety detection heuristic.
+/// Represents an alert raised due to observed patient fatigue, hesitation, or stress.
 class PatientAlert {
   final String id;
   final String patientId;
@@ -17,9 +17,8 @@ class PatientAlert {
   });
 }
 
-/// Service that manages local stress/frustration alerts raised during activities.
-/// Alerts are surfaced on the Caregiver Dashboard as a prominent banner.
-/// No push notification backend required — fully local for prototype.
+/// Singleton service managing alerts triggered during patient activities.
+/// Alerts are displayed prominently as an alert banner at the top of the Caregiver Dashboard.
 class AlertService extends ChangeNotifier {
   static final AlertService instance = AlertService._internal();
   AlertService._internal();
@@ -27,33 +26,37 @@ class AlertService extends ChangeNotifier {
   final List<PatientAlert> _alerts = [];
 
   List<PatientAlert> get activeAlerts => List.unmodifiable(_alerts);
-  bool get hasAlerts => _alerts.isNotEmpty;
 
-  /// Raise an alert (e.g. repeated frustration, long no-response).
   void raiseAlert({
     required String patientId,
     required String activityTitle,
     required String reason,
   }) {
-    final alert = PatientAlert(
-      id: 'alert_${DateTime.now().millisecondsSinceEpoch}',
-      patientId: patientId,
-      activityTitle: activityTitle,
-      reason: reason,
-      time: DateTime.now(),
+    // Avoid duplicate spam within 5 minutes for the same activity
+    final now = DateTime.now();
+    final duplicate = _alerts.any(
+      (a) => a.activityTitle == activityTitle && now.difference(a.time).inMinutes < 5,
     );
-    _alerts.add(alert);
-    debugPrint('[AlertService] Alert raised: ${alert.reason} during ${alert.activityTitle}');
+    if (duplicate) return;
+
+    _alerts.insert(
+      0,
+      PatientAlert(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        patientId: patientId,
+        activityTitle: activityTitle,
+        reason: reason,
+        time: now,
+      ),
+    );
     notifyListeners();
   }
 
-  /// Caregiver acknowledges and clears an alert.
   void clearAlert(String id) {
     _alerts.removeWhere((a) => a.id == id);
     notifyListeners();
   }
 
-  /// Clear all alerts (e.g., after a session ends without incident).
   void clearAll() {
     _alerts.clear();
     notifyListeners();
