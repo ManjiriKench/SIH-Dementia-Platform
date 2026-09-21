@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/audio/voice_assistant_service.dart';
-import '../../core/audio/activity_voice_scripts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/navigation/app_routes.dart';
 import '../../core/safety/game_safety_manager.dart';
 import '../../widgets/common/calm_card.dart';
 import '../../widgets/common/elder_button.dart';
@@ -14,9 +14,9 @@ import '../../services/profile_service.dart';
 import '../../services/session_service.dart';
 import '../patient_activity/activity_completion_screen.dart';
 
-/// Connection Together Activity 2: Music & Memory.
-/// Combines simulated soothing local music playback with reflective conversation prompts.
-/// Non-diagnostic, unhurried, zero scoring.
+/// Connection Together Activity 2: Music & Memory (Heartfelt Melodies).
+/// Plays real soothing melodies via native AudioTrack and offers tranquil conversation prompts.
+/// Voice assistant speaks once gently and pauses while the melody plays.
 class MusicAndMemoryActivityScreen extends StatefulWidget {
   const MusicAndMemoryActivityScreen({super.key});
 
@@ -25,17 +25,19 @@ class MusicAndMemoryActivityScreen extends StatefulWidget {
 }
 
 class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScreen> {
+  static const MethodChannel _audioChannel = MethodChannel('com.example.mobile/audio');
+
   int _currentSongIndex = 0;
   bool _isPlaying = false;
-  double _playbackSeconds = 18.0;
-  final double _totalSeconds = 180.0;
+  double _playbackSeconds = 0.0;
+  final double _totalSeconds = 120.0;
   Timer? _playbackTimer;
   bool _isSpeakingPrompt = false;
   late final GameSafetyManager _safetyManager;
 
   final List<Map<String, dynamic>> _songs = [
     {
-      'title': 'Borgeet Bamboo Flute (Morning Raga)',
+      'title': 'Borgeet Bamboo Flute (Morning Raga Bhupali)',
       'artist': 'Traditional Assam Folk Ensemble',
       'genre': 'Devotional Flute',
       'icon': Icons.music_note_rounded,
@@ -45,7 +47,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
       'caregiverNote': 'Humming along or gently tapping fingers to the rhythm is wonderful engagement.',
     },
     {
-      'title': 'Rabindra Sangeet — Anandadhara',
+      'title': 'Rabindra Sangeet & Sitar (Anandadhara)',
       'artist': 'Acoustic Sitar & Esraj',
       'genre': 'Bengal & Assam Classics',
       'icon': Icons.graphic_eq_rounded,
@@ -54,46 +56,37 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
       'prompt': 'Listen to the soothing sitar strings. Who in the family loved playing or singing this melody?',
       'caregiverNote': 'Let the melody play quietly. Acknowledge whatever peaceful feelings arise.',
     },
-    {
-      'title': 'Golden Assam Tea Harvest Song',
-      'artist': 'Bihu Dhol & Pepa Traditional',
-      'genre': 'Folk Melody',
-      'icon': Icons.library_music_rounded,
-      'color': AppColors.peachDark,
-      'bgGradient': [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
-      'prompt': 'Remember the spring celebrations and green tea bushes swaying in the warm breeze?',
-      'caregiverNote': 'Ask about celebrations or favorite dishes made during the harvest festival.',
-    },
   ];
 
   @override
   void initState() {
     super.initState();
-    SessionService.instance.startActivityByTitle(activityTitle: 'Music & Memory');
+    SessionService.instance.startActivityByTitle(activityTitle: 'Heartfelt Melodies');
     _safetyManager = GameSafetyManager(
-      activityTitle: 'Music & Memory',
+      activityTitle: 'Heartfelt Melodies',
       onEndGameGracefully: _endGameGracefully,
       onAutoSkip: _nextSong,
     );
     _safetyManager.onQuestionStart();
     _startPlayback();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (VoiceAssistantService.instance.isGuideMode && _songs.isNotEmpty) {
-        VoiceAssistantService.instance.guideSequence([
-          ...ActivityVoiceScripts.musicAndMemoryIntro,
-          ActivityVoiceScripts.musicAndMemorySongStarted(_songs[0]['title'] as String),
-        ]);
-        Timer(const Duration(seconds: 4), () {
-          if (mounted && VoiceAssistantService.instance.isGuideMode) {
-            VoiceAssistantService.instance.guideSpeak(_songs[0]['prompt'] as String);
-          }
-        });
+      if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.stopSpeaking();
+        VoiceAssistantService.instance.guideSpeak(
+          'Here is a peaceful tune for you. Relax and enjoy the music.',
+        );
       }
     });
   }
 
   void _startPlayback() {
     _isPlaying = true;
+    _playbackSeconds = 0.0;
+    try {
+      _audioChannel.invokeMethod('play', {'songIndex': _currentSongIndex});
+    } catch (_) {}
+
     _playbackTimer?.cancel();
     _playbackTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_isPlaying && mounted) {
@@ -114,26 +107,54 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
     setState(() {
       _isPlaying = !_isPlaying;
     });
+
+    try {
+      if (_isPlaying) {
+        _audioChannel.invokeMethod('play', {'songIndex': _currentSongIndex});
+      } else {
+        _audioChannel.invokeMethod('pause');
+      }
+    } catch (_) {}
   }
 
   void _speakPrompt(String text) async {
     HapticFeedback.lightImpact();
     setState(() => _isSpeakingPrompt = true);
+
+    // Pause music briefly while reading prompt
+    try {
+      _audioChannel.invokeMethod('pause');
+    } catch (_) {}
+
     await VoiceAssistantService.instance.speak(text);
+
+    // Resume music if it was playing
+    if (_isPlaying && mounted) {
+      try {
+        _audioChannel.invokeMethod('play', {'songIndex': _currentSongIndex});
+      } catch (_) {}
+    }
     if (mounted) setState(() => _isSpeakingPrompt = false);
   }
 
   void _endGameGracefully() {
     _playbackTimer?.cancel();
+    try {
+      _audioChannel.invokeMethod('stop');
+    } catch (_) {}
+
     SessionService.instance.completeSession();
     if (VoiceAssistantService.instance.isGuideMode) {
-      VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.musicAndMemoryComplete);
+      VoiceAssistantService.instance.stopSpeaking();
+      VoiceAssistantService.instance.guideSpeak('That was a lovely, calming musical moment.');
     }
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const ActivityCompletionScreen(
-            activityTitle: 'Music & Memory',
+            activityTitle: 'Heartfelt Melodies',
+            nextActivityTitle: 'Build the Day',
+            nextRoute: AppRoutes.buildTheDay,
           ),
         ),
       );
@@ -151,6 +172,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
     SystemSound.play(SystemSoundType.click);
     HapticFeedback.mediumImpact();
     _playbackTimer?.cancel();
+
     if (_currentSongIndex < _songs.length - 1) {
       setState(() {
         _currentSongIndex++;
@@ -158,38 +180,26 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
       });
       _safetyManager.onQuestionStart();
       _startPlayback();
+
       if (VoiceAssistantService.instance.isGuideMode) {
+        VoiceAssistantService.instance.stopSpeaking();
         final next = _songs[_currentSongIndex];
-        VoiceAssistantService.instance.guideSequence([
-          ActivityVoiceScripts.musicAndMemoryBetweenSongs,
-          ActivityVoiceScripts.musicAndMemorySongStarted(next['title'] as String),
-        ]);
-        Timer(const Duration(seconds: 4), () {
-          if (mounted && VoiceAssistantService.instance.isGuideMode) {
-            VoiceAssistantService.instance.guideSpeak(next['prompt'] as String);
-          }
-        });
+        VoiceAssistantService.instance.guideSpeak(
+          'Now playing ${next['title']}. Take a deep breath and listen.',
+        );
       }
     } else {
-      // Finished all songs
-      SessionService.instance.completeSession();
-      if (VoiceAssistantService.instance.isGuideMode) {
-        VoiceAssistantService.instance.guideSequence(ActivityVoiceScripts.musicAndMemoryComplete);
-      }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const ActivityCompletionScreen(
-            activityTitle: 'Music & Memory',
-          ),
-        ),
-      );
+      _endGameGracefully();
     }
   }
 
   @override
   void dispose() {
-    _safetyManager.dispose();
     _playbackTimer?.cancel();
+    try {
+      _audioChannel.invokeMethod('stop');
+    } catch (_) {}
+    _safetyManager.dispose();
     super.dispose();
   }
 
@@ -223,7 +233,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
         title: const FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text('Music & Memory', style: AppTypography.caregiverSubheading),
+          child: Text('Heartfelt Melodies', style: AppTypography.caregiverSubheading),
         ),
         actions: [
           const GuideModeSpeakerBadge(),
@@ -248,7 +258,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Voice guidance
+              // Voice guidance bar
               const VoiceInstructionBar(
                 instructionText: 'Listen to the soothing melody. Let any peaceful memories surface naturally.',
                 autoPlay: false,
@@ -318,7 +328,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
                 ),
                 child: Column(
                   children: [
-                    // Icon and pulsating wave animation
+                    // Icon with soft animated aura
                     Stack(
                       alignment: Alignment.center,
                       children: [
@@ -393,7 +403,7 @@ class _MusicAndMemoryActivityScreenState extends State<MusicAndMemoryActivityScr
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // Big Play/Pause Button
                     ElevatedButton.icon(

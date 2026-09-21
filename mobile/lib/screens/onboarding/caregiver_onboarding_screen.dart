@@ -95,14 +95,11 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
     });
   }
 
+  int _listenSeconds = 0;
+
   void _toggleListen(int fieldId, TextEditingController controller, ProfileQuestion questionType) {
     if (_isListening && _activeListeningField == fieldId) {
-      _listeningTimer?.cancel();
-      setState(() {
-        _isListening = false;
-        _activeListeningField = 0;
-      });
-      _runNlp(controller.text, questionType, fieldId);
+      _stopListening(fieldId, controller, questionType);
       return;
     }
 
@@ -110,27 +107,31 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
     setState(() {
       _isListening = true;
       _activeListeningField = fieldId;
+      _listenSeconds = 0;
     });
 
-    if (VoiceAssistantService.instance.isGuideMode) {
-      VoiceAssistantService.instance.guideSpeak('Listening. Please speak your answer.');
-    }
-
-    // Gentle speech capture: fills verbal input and triggers NLP
-    _listeningTimer = Timer(const Duration(milliseconds: 2200), () {
-      if (!mounted || !_isListening) return;
+    // Count recording seconds without cutting the user off
+    _listeningTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || !_isListening) {
+        timer.cancel();
+        return;
+      }
       setState(() {
-        if (controller.text.trim().isEmpty) {
-          if (fieldId == 1) controller.text = 'Bonti Baruah, 72 years old, from Tezpur Assam';
-          if (fieldId == 11) controller.text = 'Tezpur, Assam';
-          if (fieldId == 2) controller.text = 'She loves morning tea on veranda, flute music, looking at old family photos';
-          if (fieldId == 3) controller.text = 'Morning tea at 8, afternoon rest, evening family prayer. Doctor says avoid rushing and keep hydrated.';
-        }
-        _isListening = false;
-        _activeListeningField = 0;
+        _listenSeconds++;
       });
-      _runNlp(controller.text, questionType, fieldId);
     });
+  }
+
+  void _stopListening(int fieldId, TextEditingController controller, ProfileQuestion questionType) {
+    _listeningTimer?.cancel();
+    setState(() {
+      _isListening = false;
+      _activeListeningField = 0;
+      _listenSeconds = 0;
+    });
+    if (controller.text.trim().isNotEmpty) {
+      _runNlp(controller.text, questionType, fieldId);
+    }
   }
 
   void _runNlp(String text, ProfileQuestion questionType, int fieldId) {
@@ -277,19 +278,30 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
         ]),
         if (listening) ...[
           const SizedBox(height: 8),
-          const Row(children: [
-            SizedBox(
-              width: 8,
-              height: 8,
+          Row(children: [
+            const SizedBox(
+              width: 10,
+              height: 10,
               child: DecoratedBox(decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Listening... Tap mic or wait to finish',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                'Recording (${_listenSeconds}s)... Speak or type. Tap Done when finished.',
+                style: const TextStyle(fontSize: 12, color: AppColors.forestDark, fontWeight: FontWeight.w600),
                 overflow: TextOverflow.ellipsis,
               ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () => _stopListening(fieldId, controller, questionType),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                backgroundColor: AppColors.forestPrimary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Done Speaking', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             ),
           ]),
         ],

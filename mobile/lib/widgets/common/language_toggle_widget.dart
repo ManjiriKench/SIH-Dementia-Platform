@@ -11,8 +11,12 @@ class LanguageToggleWidget extends StatelessWidget {
   const LanguageToggleWidget({super.key, this.compact = false});
 
   static const List<Map<String, String>> languages = [
+    {'code': 'as', 'label': 'Assamese', 'native': 'অসমীয়া', 'sub': 'Assam • North-East'},
+    {'code': 'bn', 'label': 'Bengali', 'native': 'বাংলা', 'sub': 'Tripura & Barak • North-East'},
+    {'code': 'brx', 'label': 'Bodo', 'native': 'बर\' / बड़ो', 'sub': 'Bodoland • North-East'},
+    {'code': 'mni', 'label': 'Manipuri', 'native': 'মৈতৈলোন্', 'sub': 'Manipur • North-East'},
+    {'code': 'lus', 'label': 'Mizo', 'native': 'Mizo ṭawng', 'sub': 'Mizoram • North-East'},
     {'code': 'en', 'label': 'English', 'native': 'English', 'sub': 'Standard'},
-    {'code': 'as', 'label': 'Assamese', 'native': 'অসমীয়া', 'sub': 'North East'},
     {'code': 'hi', 'label': 'Hindi', 'native': 'हिंदी', 'sub': 'National'},
   ];
 
@@ -21,6 +25,14 @@ class LanguageToggleWidget extends StatelessWidget {
       switch (code) {
         case 'as':
           return 'AS';
+        case 'bn':
+          return 'BN';
+        case 'brx':
+          return 'BRX';
+        case 'mni':
+          return 'MNI';
+        case 'lus':
+          return 'MIZ';
         case 'hi':
           return 'HI';
         case 'en':
@@ -31,6 +43,14 @@ class LanguageToggleWidget extends StatelessWidget {
     switch (code) {
       case 'as':
         return 'অসমীয়া';
+      case 'bn':
+        return 'বাংলা';
+      case 'brx':
+        return 'बर\'';
+      case 'mni':
+        return 'মৈতৈলোন্';
+      case 'lus':
+        return 'Mizo';
       case 'hi':
         return 'हिंदी';
       case 'en':

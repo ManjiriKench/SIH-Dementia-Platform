@@ -17,6 +17,8 @@ class ActivityCompletionScreen extends StatefulWidget {
   final Duration? durationSpent;
   final VoidCallback? onNextActivity;
   final VoidCallback? onFinishSession;
+  final String? nextActivityTitle;
+  final String? nextRoute;
 
   const ActivityCompletionScreen({
     super.key,
@@ -24,6 +26,8 @@ class ActivityCompletionScreen extends StatefulWidget {
     this.durationSpent,
     this.onNextActivity,
     this.onFinishSession,
+    this.nextActivityTitle,
+    this.nextRoute,
   });
 
   @override
@@ -233,14 +237,20 @@ class _ActivityCompletionScreenState extends State<ActivityCompletionScreen> {
 
                   // Play Next Activity
                   ElderButton(
-                    label: 'Play Next Activity',
+                    label: widget.nextActivityTitle != null
+                        ? 'Play Next: ${widget.nextActivityTitle}'
+                        : 'Play Next Activity',
                     icon: Icons.play_arrow_rounded,
                     variant: ElderButtonVariant.primary,
                     height: 56,
                     onPressed: widget.onNextActivity ??
                         () {
                           _countdownTimer?.cancel();
-                          Navigator.of(context).pushReplacementNamed(AppRoutes.todaysJourney);
+                          if (widget.nextRoute != null) {
+                            Navigator.of(context).pushReplacementNamed(widget.nextRoute!);
+                          } else {
+                            Navigator.of(context).pushReplacementNamed(AppRoutes.todaysJourney);
+                          }
                         },
                   ),
                   const SizedBox(height: 12),

@@ -404,6 +404,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     final patientName = patient.preferredName;
     final dashboardData = _buildDynamicDashboardData(patientName);
     final feedbackList = FeedbackService.instance.feedbackList;
+    final hasPendingFeedback = feedbackList.isEmpty || dashboardData.pendingFeedbackCount > 0;
     final activeAlerts = AlertService.instance.activeAlerts;
     final medications = CarePlanService.instance.medications;
     final appointments = CarePlanService.instance.upcomingAppointments;
@@ -673,8 +674,8 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TrendBarChart(weeklyData: dashboardData.weeklyConsistency),
-                    const SizedBox(height: 16),
+                    _CollapsibleTrendGraph(weeklyData: dashboardData.weeklyConsistency),
+                    const SizedBox(height: 10),
 
                     // Domain exposure header
                     Row(
@@ -957,43 +958,103 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
 
               // SECTION 5: 📝 Observations & Feedback
               _DashboardSectionCard(
+                key: ValueKey('feedback_section_$hasPendingFeedback'),
                 title: 'Caregiver Observations & Feedback',
                 icon: Icons.rate_review_outlined,
+                initialExpanded: hasPendingFeedback,
+                trailingBadge: hasPendingFeedback
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.errorGentle),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline_rounded, size: 12, color: AppColors.errorGentle),
+                            SizedBox(width: 4),
+                            Text(
+                              'URGENT',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.errorGentle,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Submitted ✓',
+                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.forestDark),
+                        ),
+                      ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (feedbackList.isEmpty) ...[
+                    if (hasPendingFeedback) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceWarm,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.peach),
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.errorGentle.withValues(alpha: 0.5)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.pending_actions_rounded, color: AppColors.forestPrimary, size: 22),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFEE2E2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.warning_amber_rounded, color: AppColors.errorGentle, size: 20),
+                            ),
                             const SizedBox(width: 10),
                             const Expanded(
-                              child: Text(
-                                'Pending session observation. Sharing observations adapts future activity selections.',
-                                style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Feedback Submission Urgent',
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.errorGentle),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Sharing observations adapts tomorrow’s difficulty & activity selection.',
+                                    style: TextStyle(fontSize: 11.5, color: AppColors.textPrimary),
+                                  ),
+                                ],
                               ),
                             ),
+                            const SizedBox(width: 8),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.forestPrimary,
+                                backgroundColor: AppColors.errorGentle,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                               onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverFeedback),
-                              child: const Text('Fill Now'),
+                              child: const Text('Submit Now'),
                             ),
                           ],
                         ),
                       ),
-                    ] else ...[
+                      const SizedBox(height: 10),
+                    ],
+                    if (feedbackList.isNotEmpty) ...[
                       ...feedbackList.take(3).map((fb) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -1109,6 +1170,7 @@ class _DashboardSectionCard extends StatefulWidget {
   final bool initialExpanded;
 
   const _DashboardSectionCard({
+    super.key,
     required this.title,
     required this.icon,
     required this.child,
@@ -1188,3 +1250,70 @@ class _DashboardSectionCardState extends State<_DashboardSectionCard> {
     );
   }
 }
+
+/// Collapsible sliding weekly consistency chart (hidden by default with arrow toggle)
+class _CollapsibleTrendGraph extends StatefulWidget {
+  final List<DailyContextPoint> weeklyData;
+  const _CollapsibleTrendGraph({required this.weeklyData});
+
+  @override
+  State<_CollapsibleTrendGraph> createState() => _CollapsibleTrendGraphState();
+}
+
+class _CollapsibleTrendGraphState extends State<_CollapsibleTrendGraph> {
+  bool _isGraphOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWarm.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSoft),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isGraphOpen = !_isGraphOpen),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.bar_chart_rounded, color: AppColors.forestPrimary, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Weekly Consistency Chart',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.forestDark),
+                    ),
+                  ),
+                  Text(
+                    _isGraphOpen ? 'Hide' : 'Slide to View',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.forestPrimary),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: _isGraphOpen ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: const Icon(Icons.expand_more_rounded, color: AppColors.forestPrimary, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: _isGraphOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+              child: TrendBarChart(weeklyData: widget.weeklyData),
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
