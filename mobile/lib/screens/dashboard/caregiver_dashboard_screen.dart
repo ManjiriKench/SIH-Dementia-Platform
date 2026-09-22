@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/audio/voice_assistant_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
@@ -406,6 +407,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
+              VoiceAssistantService.instance.stopSpeaking();
               await ProfileService.instance.clearProfile();
               await SessionService.instance.clearHistory();
               CarePlanService.instance.clearAll();
@@ -1217,7 +1219,9 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.errorGentle,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                               onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverFeedback),
