@@ -98,14 +98,14 @@ class ProfileService extends ChangeNotifier {
   }
 
   /// Clears active profile (for testing fresh onboarding) from memory and disk
-  void clearProfile() {
+  Future<void> clearProfile() async {
     _activeProfile = null;
     _hasCompletedOnboarding = false;
     generalVoiceNote = null;
     observationVoiceNote = null;
     doctorVoiceNote = null;
     notifyListeners();
-    _clearProfileFromDisk();
+    await _clearProfileFromDisk();
   }
 
   /// Resets to clean Bonti Baruah demo profile for presentations

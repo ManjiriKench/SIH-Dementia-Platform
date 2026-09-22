@@ -51,6 +51,8 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     AlertService.instance.addListener(_onServiceUpdate);
     CarePlanService.instance.addListener(_onServiceUpdate);
     RecommendationService.instance.addListener(_onServiceUpdate);
+    MemoryService.instance.addListener(_onServiceUpdate);
+    MemoryService.instance.initialize();
   }
 
   void _onServiceUpdate() {
@@ -65,6 +67,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     AlertService.instance.removeListener(_onServiceUpdate);
     CarePlanService.instance.removeListener(_onServiceUpdate);
     RecommendationService.instance.removeListener(_onServiceUpdate);
+    MemoryService.instance.removeListener(_onServiceUpdate);
     super.dispose();
   }
 
@@ -316,7 +319,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
 
     // 2. Calculate today's completions for weekly consistency
     final now = DateTime.now();
-    final todayWeekday = now.weekday;
+    final todayWeekday = now.weekday; // 1 = Mon ... 7 = Sun
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final todayLabel = dayLabels[todayWeekday - 1];
 
@@ -326,9 +329,13 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         s.startTime.day == now.day).length;
 
     final updatedWeekly = base.weeklyConsistency.map((point) {
-      if (point.dayLabel == todayLabel) {
+      final cleanLabel = point.dayLabel.split(' ')[0];
+      final isRealToday = cleanLabel == todayLabel;
+      final displayLabel = isRealToday ? '$cleanLabel (Today)' : cleanLabel;
+
+      if (isRealToday) {
         return DailyContextPoint(
-          dayLabel: point.dayLabel,
+          dayLabel: displayLabel,
           completedActivitiesCount: point.completedActivitiesCount + todaySessions,
           engagementLevel: point.engagementLevel,
           primaryMood: point.primaryMood,
@@ -336,7 +343,14 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           hadMusicActivity: point.hadMusicActivity || history.any((s) => s.activityId.contains('music')),
         );
       }
-      return point;
+      return DailyContextPoint(
+        dayLabel: displayLabel,
+        completedActivitiesCount: point.completedActivitiesCount,
+        engagementLevel: point.engagementLevel,
+        primaryMood: point.primaryMood,
+        hadTogetherSession: point.hadTogetherSession,
+        hadMusicActivity: point.hadMusicActivity,
+      );
     }).toList();
 
     return DashboardData(
@@ -350,6 +364,56 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
       recentFeedback: base.recentFeedback,
       syncStatus: base.syncStatus,
       lastUpdated: now,
+    );
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.backgroundWarm,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.errorGentle),
+            SizedBox(width: 8),
+            Text('Log Out Caregiver?', style: AppTypography.caregiverHeading),
+          ],
+        ),
+        content: const Text(
+          'This will log out the active profile and clear saved details from this device.\n\nNo user details will be fetched, allowing you to test creating a brand new profile from scratch.',
+          style: AppTypography.caregiverBody,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.errorGentle,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await ProfileService.instance.clearProfile();
+              await SessionService.instance.clearHistory();
+              CarePlanService.instance.clearAll();
+              AlertService.instance.clearAll();
+              FeedbackService.instance.clearAll();
+              await RecommendationService.instance.resetStats();
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRoutes.roleSelection,
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('Log Out & Reset'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -380,6 +444,8 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             onPressed: () async {
               await ProfileService.instance.resetToDemoProfile();
               await SessionService.instance.clearHistory();
+              await CarePlanService.instance.resetToDemo();
+              FeedbackService.instance.resetToDemo();
               if (ctx.mounted) Navigator.of(ctx).pop();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -400,7 +466,69 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final patient = ProfileService.instance.activeProfile ?? MockDataRepository.createSamplePatient();
+    if (!ProfileService.instance.hasProfile) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundWarm,
+        appBar: AppBar(
+          backgroundColor: AppColors.backgroundWarm,
+          elevation: 0,
+          leading: const GentleBackButton(),
+          title: const Text('Caregiver Dashboard', style: AppTypography.caregiverHeading),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceWarm,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.forestPrimary.withValues(alpha: 0.2), width: 2),
+                    ),
+                    child: const Icon(Icons.person_outline_rounded, size: 54, color: AppColors.forestPrimary),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('No Active Profile Found', style: AppTypography.caregiverHeading),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'You are currently logged out. Set up a brand new profile to test and personalize daily experiences, or load the demo profile.',
+                    style: AppTypography.caregiverBody,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElderButton(
+                    label: 'Create New Profile',
+                    icon: Icons.person_add_alt_1_rounded,
+                    variant: ElderButtonVariant.primary,
+                    height: 52,
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.caregiverOnboarding),
+                  ),
+                  const SizedBox(height: 12),
+                  ElderButton(
+                    label: 'Load Demo Profile (Bonti Baruah)',
+                    icon: Icons.auto_awesome,
+                    variant: ElderButtonVariant.peach,
+                    height: 52,
+                    onPressed: () async {
+                      await ProfileService.instance.resetToDemoProfile();
+                      await CarePlanService.instance.resetToDemo();
+                      FeedbackService.instance.resetToDemo();
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final patient = ProfileService.instance.activeProfile!;
     final patientName = patient.preferredName;
     final dashboardData = _buildDynamicDashboardData(patientName);
     final feedbackList = FeedbackService.instance.feedbackList;
@@ -409,7 +537,6 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
     final medications = CarePlanService.instance.medications;
     final appointments = CarePlanService.instance.upcomingAppointments;
     final activityInsights = RecommendationService.instance.getInsightsForCaregiver();
-    MemoryService.instance.initialize();
     final memories = MemoryService.instance.memories;
 
     return Scaffold(
@@ -433,15 +560,31 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             tooltip: 'All 8 Activities',
             onPressed: () => ActivitiesCatalogSheet.show(context),
           ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: AppColors.errorGentle),
+            tooltip: 'Log Out & Clear Profile',
+            onPressed: _confirmLogout,
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.forestPrimary),
             tooltip: 'More options & diagnostics',
             onSelected: (val) {
+              if (val == 'logout') _confirmLogout();
               if (val == 'reset') _confirmResetDemo();
               if (val == 'states') Navigator.of(context).pushNamed(AppRoutes.systemStatesShowcase);
               if (val == 'diagnostics') Navigator.of(context).pushNamed('/backend_test');
             },
             itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_rounded, size: 20, color: AppColors.errorGentle),
+                    SizedBox(width: 10),
+                    Text('Log Out Profile', style: TextStyle(color: AppColors.errorGentle, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'reset',
                 child: Row(
@@ -613,18 +756,30 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        ...patient.interestsAndHobbies.take(3).map((h) => Chip(
-                              label: Text(h, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                        if (patient.interestsAndHobbies.isEmpty && patient.favoriteMusicGenres.isEmpty)
+                          InkWell(
+                            onTap: () => Navigator.of(context).pushNamed(AppRoutes.caregiverOnboarding),
+                            child: const Chip(
+                              label: Text('+ Add personal interests & comforts', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.forestPrimary)),
                               backgroundColor: AppColors.surfaceWarm,
                               padding: EdgeInsets.zero,
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            )),
-                        ...patient.favoriteMusicGenres.take(2).map((m) => Chip(
-                              label: Text(m, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                              backgroundColor: AppColors.surfaceWarm,
-                              padding: EdgeInsets.zero,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            )),
+                            ),
+                          )
+                        else ...[
+                          ...patient.interestsAndHobbies.take(3).map((h) => Chip(
+                                label: Text(h, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                                backgroundColor: AppColors.surfaceWarm,
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              )),
+                          ...patient.favoriteMusicGenres.take(2).map((m) => Chip(
+                                label: Text(m, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                                backgroundColor: AppColors.surfaceWarm,
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              )),
+                        ],
                       ],
                     ),
                   ],
@@ -747,7 +902,15 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(insight.activityTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Expanded(
+                                  child: Text(
+                                    insight.activityTitle,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
@@ -1069,23 +1232,28 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Wrap(
-                                    spacing: 6,
-                                    children: fb.observationTags.map((tag) {
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.sageLight,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          tag,
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.forestDark),
-                                        ),
-                                      );
-                                    }).toList(),
+                                  Expanded(
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: fb.observationTags.map((tag) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.sageLight,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            tag,
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.forestDark),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     'Rating: ${fb.comfortRating}',
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
@@ -1133,6 +1301,17 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                       ),
                     );
                   },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.errorGentle),
+                  label: const Text(
+                    'Log Out & Switch / Create New Profile',
+                    style: TextStyle(color: AppColors.errorGentle, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: _confirmLogout,
                 ),
               ),
               const SizedBox(height: 16),

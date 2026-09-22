@@ -107,4 +107,31 @@ class CarePlanService extends ChangeNotifier {
     _save();
     notifyListeners();
   }
+
+  void clearAll() {
+    _medications.clear();
+    _appointments.clear();
+    _save();
+    notifyListeners();
+  }
+
+  Future<void> resetToDemo() async {
+    _medications.clear();
+    _medications.addAll([
+      Medication(id: 'med_1', name: 'Aricept (Donepezil)', dosage: '5mg', timing: 'Evening with dinner'),
+      Medication(id: 'med_2', name: 'Vitamin D3', dosage: '1000 IU', timing: 'Morning with breakfast'),
+      Medication(id: 'med_3', name: 'Omega-3', dosage: '1 capsule', timing: 'With lunch'),
+    ]);
+    _appointments.clear();
+    _appointments.add(Appointment(
+      id: 'appt_1',
+      title: 'Neurology Follow-up',
+      doctorName: 'Dr. Sharma',
+      location: 'GMCH, Guwahati',
+      scheduledAt: DateTime.now().add(const Duration(days: 7)),
+      notes: 'Bring medication records',
+    ));
+    await _save();
+    notifyListeners();
+  }
 }

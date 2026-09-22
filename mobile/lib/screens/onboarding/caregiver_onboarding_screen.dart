@@ -6,7 +6,9 @@ import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/navigation/app_routes.dart';
 import '../../models/cognitive_domain.dart';
+import '../../models/medication.dart';
 import '../../models/patient_profile.dart';
+import '../../services/care_plan_service.dart';
 import '../../services/nlp_keyword_extractor.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/common/calm_card.dart';
@@ -28,39 +30,49 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
   Timer? _listeningTimer;
 
   // Step 1
-  final TextEditingController _nameController = TextEditingController(text: 'Bonti Baruah');
-  final TextEditingController _hometownController = TextEditingController(text: 'Tezpur, Assam');
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _hometownController = TextEditingController();
   String _selectedAgeRange = '70-79 years';
   String _selectedRelationship = 'Daughter';
   ProfileKeywords _step1Keywords = const ProfileKeywords();
 
   // Step 2
-  final TextEditingController _prefsController = TextEditingController(
-    text: 'She loves morning tea on veranda, flute music, looking at old family photos',
-  );
+  final TextEditingController _prefsController = TextEditingController();
   String _readingComfort = 'prefers_large_text';
-  String _hearingSupport = 'uses_hearing_aid';
+  String _hearingSupport = 'normal';
   String _touchMobility = 'gentle_broad_tap';
-  final Set<String> _selectedMusic = {'Borgeet Flute', 'Rabindra Sangeet', 'Old Hindi Classics'};
-  final Set<String> _selectedPlaces = {'Assam Tea Gardens', 'Veranda Swing', 'Brahmaputra River'};
+  final Set<String> _selectedMusic = {};
+  final Set<String> _selectedPlaces = {};
   ProfileKeywords _step2Keywords = const ProfileKeywords();
 
   // Step 3
-  final TextEditingController _routinesController = TextEditingController(
-    text: 'Morning tea at 8, afternoon rest, evening family prayer. Doctor says avoid rushing and keep hydrated.',
-  );
+  final TextEditingController _routinesController = TextEditingController();
   String _preferredTime = 'Morning (9 AM - 11 AM)';
   String _caregiverAvailability = 'Evenings & Weekends';
-  final Set<String> _selectedRoutineAnchors = {
-    'Morning Assam tea on veranda',
-    'Evening family prayer',
-    'Afternoon quiet rest',
-  };
+  final Set<String> _selectedRoutineAnchors = {};
   ProfileKeywords _step3Keywords = const ProfileKeywords();
 
   @override
   void initState() {
     super.initState();
+    // If an existing profile is being edited, populate fields with saved values
+    final active = ProfileService.instance.activeProfile;
+    if (active != null) {
+      _nameController.text = active.preferredName;
+      _hometownController.text = active.familiarPlaces.isNotEmpty ? active.familiarPlaces.first : '';
+      _selectedAgeRange = active.ageRange;
+      _selectedRelationship = active.relationshipToCaregiver;
+      _readingComfort = active.readingComfort;
+      _hearingSupport = active.hearingSupport;
+      _touchMobility = active.touchMobility;
+      _selectedMusic.addAll(active.favoriteMusicGenres);
+      _selectedPlaces.addAll(active.familiarPlacesAndFoods);
+      _prefsController.text = active.observationNote ?? '';
+      _routinesController.text = active.doctorRecommendations ?? '';
+      _preferredTime = active.preferredTimeOfDay;
+      _caregiverAvailability = active.caregiverAvailability;
+      _selectedRoutineAnchors.addAll(active.dailyRoutineAnchors);
+    }
     VoiceAssistantService.instance.addListener(_onVoiceUpdate);
     _guideStep(1);
   }
@@ -185,8 +197,9 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
 
   void _saveAndFinish() {
     final allKw = NlpKeywordExtractor.mergeAll([_step1Keywords, _step2Keywords, _step3Keywords]);
+    final hometown = _hometownController.text.trim();
     final profile = PatientProfile(
-      id: 'patient_default',
+      id: 'patient_${DateTime.now().millisecondsSinceEpoch}',
       preferredName: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Loved One',
       ageRange: _selectedAgeRange,
       preferredLanguage: AppStrings.currentLanguage,
@@ -194,17 +207,17 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
       readingComfort: _readingComfort,
       hearingSupport: _hearingSupport,
       touchMobility: _touchMobility,
-      favoriteMusicGenres: _selectedMusic.toList(),
-      familiarPlacesAndFoods: _selectedPlaces.toList(),
-      interestsAndHobbies: allKw.routines.isNotEmpty ? allKw.routines : const ['Assam Tea Gardens', 'Gardening'],
+      favoriteMusicGenres: _selectedMusic.isNotEmpty ? _selectedMusic.toList() : const ['Classical Songs', 'Folk Melodies'],
+      familiarPlacesAndFoods: _selectedPlaces.isNotEmpty ? _selectedPlaces.toList() : (hometown.isNotEmpty ? [hometown] : const ['Home Garden']),
+      interestsAndHobbies: allKw.routines.isNotEmpty ? allKw.routines : const ['Gardening', 'Morning Tea'],
       activitiesToAvoid: const ['time_pressure', 'rapid_flashing'],
-      observationNote: _prefsController.text.trim(),
-      whatHelpedNote: _prefsController.text.trim(),
+      observationNote: _prefsController.text.trim().isNotEmpty ? _prefsController.text.trim() : 'Enjoys peaceful, unhurried companionship.',
+      whatHelpedNote: _prefsController.text.trim().isNotEmpty ? _prefsController.text.trim() : 'Gentle guidance and familiar music brings a warm smile.',
       preferredTimeOfDay: _preferredTime,
-      dailyRoutineAnchors: _selectedRoutineAnchors.toList(),
+      dailyRoutineAnchors: _selectedRoutineAnchors.isNotEmpty ? _selectedRoutineAnchors.toList() : const ['Morning tea', 'Afternoon rest', 'Evening prayer'],
       caregiverAvailability: _caregiverAvailability,
       doctorRecommendations: _routinesController.text.trim().isNotEmpty ? _routinesController.text.trim() : null,
-      familiarPlaces: [_hometownController.text.trim()],
+      familiarPlaces: hometown.isNotEmpty ? [hometown] : const [],
       areasToSupport: const [CognitiveDomainType.memory, CognitiveDomainType.orientation],
       recentMoodTags: allKw.moodTags.isNotEmpty ? allKw.moodTags : const ['calm'],
       createdAt: DateTime.now(),
@@ -212,6 +225,25 @@ class _CaregiverOnboardingScreenState extends State<CaregiverOnboardingScreen> {
       isComplete: true,
     );
     ProfileService.instance.saveProfile(profile);
+
+    // If medications mentioned in routine/doctor advice, add to CarePlanService
+    final routineText = _routinesController.text;
+    if (routineText.isNotEmpty) {
+      final commonMeds = ['Aricept', 'Donepezil', 'Memantine', 'Namenda', 'Exelon', 'Rivastigmine', 'Galantamine', 'Vitamin D', 'Omega-3', 'Multivitamin'];
+      for (final med in commonMeds) {
+        if (routineText.toLowerCase().contains(med.toLowerCase())) {
+          CarePlanService.instance.addMedication(
+            Medication(
+              id: 'med_${DateTime.now().millisecondsSinceEpoch}_${med.hashCode}',
+              name: med,
+              dosage: 'As prescribed',
+              timing: 'Daily',
+            ),
+          );
+        }
+      }
+    }
+
     Navigator.of(context).pushReplacementNamed(AppRoutes.domainOverview);
   }
 

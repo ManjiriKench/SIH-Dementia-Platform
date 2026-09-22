@@ -130,6 +130,23 @@ class RecommendationService extends ChangeNotifier {
     }
   }
 
+  /// Resets recommendation and interaction statistics when a user logs out.
+  Future<void> resetStats() async {
+    _totalSessionsCompleted = 0;
+    _activityScores.clear();
+    _currentRecommendation = null;
+    _isNoGameRecommended = false;
+    _seedInitialScores();
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKeySessions);
+      await prefs.remove(_prefKeyScores);
+    } catch (e) {
+      debugPrint('[RecommendationService] Error resetting stats: $e');
+    }
+  }
+
   /// Calculates max recommended activities for today based on elder journey maturity.
   /// 0 sessions -> 3 activities
   /// 1 to 4 sessions -> 4 activities

@@ -53,4 +53,17 @@ class FeedbackService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearAll() {
+    _feedbackList.clear();
+    _pendingSessionIds.clear();
+    notifyListeners();
+  }
+
+  void resetToDemo() {
+    _feedbackList.clear();
+    _pendingSessionIds.clear();
+    _pendingSessionIds.add('sess_morning_tea_02');
+    notifyListeners();
+  }
 }
