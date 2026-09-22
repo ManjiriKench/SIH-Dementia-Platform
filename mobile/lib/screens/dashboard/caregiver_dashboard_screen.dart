@@ -965,7 +965,6 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         margin: const EdgeInsets.only(bottom: 6),
                         child: Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                             side: const BorderSide(color: AppColors.borderSoft),
