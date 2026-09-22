@@ -63,13 +63,17 @@ class LanguageToggleWidget extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.backgroundWarm,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 12.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,80 +106,89 @@ class LanguageToggleWidget extends StatelessWidget {
                   'The entire application will immediately update to your preferred language.',
                   style: AppTypography.caregiverBody,
                 ),
-                const SizedBox(height: 18),
-                ...languages.map((lang) {
-                  final isSelected = AppStrings.currentLanguage == lang['code'];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: InkWell(
-                      onTap: () {
-                        AppStrings.setLanguage(lang['code']!);
-                        Navigator.of(ctx).pop();
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.surfaceWarm : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
-                            width: isSelected ? 2.0 : 1.0,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                              color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lang['native']!,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${lang['label']} (${lang['sub']})',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (isSelected)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...languages.map((lang) {
+                          final isSelected = AppStrings.currentLanguage == lang['code'];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10.0),
+                            child: InkWell(
+                              onTap: () {
+                                AppStrings.setLanguage(lang['code']!);
+                                Navigator.of(ctx).pop();
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.forestPrimary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Active',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.forestPrimary,
+                                  color: isSelected ? AppColors.surfaceWarm : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
+                                    width: isSelected ? 2.0 : 1.0,
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                      color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lang['native']!,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${lang['label']} (${lang['sub']})',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.forestPrimary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Text(
+                                          'Active',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.forestPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                          ],
-                        ),
-                      ),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
-                  );
-                }),
-                const SizedBox(height: 10),
+                  ),
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ),
