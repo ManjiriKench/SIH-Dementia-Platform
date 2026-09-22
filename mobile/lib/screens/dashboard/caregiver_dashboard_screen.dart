@@ -1383,12 +1383,13 @@ class _DashboardSectionCardState extends State<_DashboardSectionCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
+    return Material(
+      color: AppColors.cardSurface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSoft),
+        side: const BorderSide(color: AppColors.borderSoft),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           InkWell(
@@ -1404,7 +1405,7 @@ class _DashboardSectionCardState extends State<_DashboardSectionCard> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.surfaceWarm,
                       shape: BoxShape.circle,
                     ),
