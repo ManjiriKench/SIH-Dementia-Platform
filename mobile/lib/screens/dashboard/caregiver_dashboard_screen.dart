@@ -88,43 +88,46 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             Text('Add Medication', style: AppTypography.caregiverHeading),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Medication Name',
-                  hintText: 'e.g. Donepezil',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Medication Name',
+                    hintText: 'e.g. Donepezil',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: dosageCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Dosage',
-                  hintText: 'e.g. 5mg or 1 capsule',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: dosageCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Dosage',
+                    hintText: 'e.g. 5mg or 1 capsule',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: timingCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Timing',
-                  hintText: 'e.g. Morning after breakfast',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: timingCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Timing',
+                    hintText: 'e.g. Morning after breakfast',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -173,43 +176,46 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             Text('Add Appointment', style: AppTypography.caregiverHeading),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Appointment Purpose',
-                  hintText: 'e.g. Memory Clinic Routine Checkup',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Appointment Purpose',
+                    hintText: 'e.g. Memory Clinic Routine Checkup',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: doctorCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Doctor / Specialist',
-                  hintText: 'e.g. Dr. Sharma (Neurologist)',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: doctorCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Doctor / Specialist',
+                    hintText: 'e.g. Dr. Sharma (Neurologist)',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: locationCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Location / Hospital',
-                  hintText: 'e.g. GMCH Guwahati',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: locationCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Location / Hospital',
+                    hintText: 'e.g. GMCH Guwahati',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -250,25 +256,28 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         backgroundColor: AppColors.backgroundWarm,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Add Routine Reminder', style: AppTypography.caregiverHeading),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Secondary reminder to support daily rhythm (e.g. hydration, doctor check-in).',
-              style: AppTypography.caregiverCaption,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'e.g. Doctor visit Friday 11 AM',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Secondary reminder to support daily rhythm (e.g. hydration, doctor check-in).',
+                style: AppTypography.caregiverCaption,
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Doctor visit Friday 11 AM',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
@@ -954,31 +963,34 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                     ..._routineReminders.entries.map((entry) {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
+                        child: Material(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.borderSoft),
-                        ),
-                        child: CheckboxListTile(
-                          value: entry.value,
-                          activeColor: AppColors.forestPrimary,
-                          title: Text(
-                            entry.key,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              decoration: entry.value ? TextDecoration.none : TextDecoration.lineThrough,
-                              color: entry.value ? AppColors.textPrimary : AppColors.textTertiary,
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(color: AppColors.borderSoft),
                           ),
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          onChanged: (val) {
-                            setState(() {
-                              _routineReminders[entry.key] = val ?? false;
-                            });
-                          },
+                          child: CheckboxListTile(
+                            value: entry.value,
+                            activeColor: AppColors.forestPrimary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            title: Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                decoration: entry.value ? TextDecoration.none : TextDecoration.lineThrough,
+                                color: entry.value ? AppColors.textPrimary : AppColors.textTertiary,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                            dense: true,
+                            onChanged: (val) {
+                              setState(() {
+                                _routineReminders[entry.key] = val ?? false;
+                              });
+                            },
+                          ),
                         ),
                       );
                     }),
@@ -1415,15 +1427,11 @@ class _DashboardSectionCardState extends State<_DashboardSectionCard> {
               ),
             ),
           ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: _isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Padding(
+          if (_isExpanded)
+            Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: widget.child,
             ),
-            secondChild: const SizedBox.shrink(),
-          ),
         ],
       ),
     );
@@ -1481,15 +1489,11 @@ class _CollapsibleTrendGraphState extends State<_CollapsibleTrendGraph> {
               ),
             ),
           ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
-            crossFadeState: _isGraphOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Padding(
+          if (_isGraphOpen)
+            Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
               child: TrendBarChart(weeklyData: widget.weeklyData),
             ),
-            secondChild: const SizedBox.shrink(),
-          ),
         ],
       ),
     );
