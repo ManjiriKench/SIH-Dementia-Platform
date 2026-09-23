@@ -25,6 +25,36 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   final List<Map<String, String>> _languages = [
     {
+      'code': 'as',
+      'nativeName': 'অসমীয়া',
+      'region': 'Assam • North-Eastern Region',
+      'sampleGreeting': 'নমস্কাৰ। আহক আমি একেলগে কেইটামান শান্তিপূৰ্ণ মুহূৰ্ত কটাওঁ।',
+    },
+    {
+      'code': 'bn',
+      'nativeName': 'বাংলা',
+      'region': 'Tripura & Barak Valley • North-East',
+      'sampleGreeting': 'নমস্কার। আসুন একসাথে শান্তিময় কিছু সময় কাটাই।',
+    },
+    {
+      'code': 'brx',
+      'nativeName': 'बर\' / बड़ो',
+      'region': 'Bodoland (Assam) • North-East',
+      'sampleGreeting': 'बरायबाय! फै जों लोगोसे गोजोन सम खालामनि।',
+    },
+    {
+      'code': 'mni',
+      'nativeName': 'মৈতৈলোন্ (Manipuri)',
+      'region': 'Manipur • North-East',
+      'sampleGreeting': 'তরাম্না ওকচরি! পুন্না নুংঙাইরবা কুন কয়া লেপমিন্নসি।',
+    },
+    {
+      'code': 'lus',
+      'nativeName': 'Mizo ṭawng',
+      'region': 'Mizoram • North-East',
+      'sampleGreeting': 'Chibai le! Vawiinah hun nuam tak hmangdun ang hmiang.',
+    },
+    {
       'code': 'en',
       'nativeName': 'English',
       'region': 'Standard / Global',
@@ -33,14 +63,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     {
       'code': 'hi',
       'nativeName': 'हिंदी',
-      'region': 'Hindi',
+      'region': 'National Language',
       'sampleGreeting': 'नमस्ते। आइए मिलकर सुखद और शांत पल बिताएं।',
-    },
-    {
-      'code': 'as',
-      'nativeName': 'অসমীয়া',
-      'region': 'North Eastern Region / Assam',
-      'sampleGreeting': 'নমস্কাৰ। আহক আমি একেলগে কেইটামান শান্তিপূৰ্ণ মুহূৰ্ত কটাওঁ।',
     },
   ];
 

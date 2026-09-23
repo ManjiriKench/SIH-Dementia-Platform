@@ -6,18 +6,51 @@ import '../../core/constants/app_typography.dart';
 /// Medium-sized language toggle button positioned on the top right.
 /// Allows instant switching between English, Hindi, and Assamese.
 class LanguageToggleWidget extends StatelessWidget {
-  const LanguageToggleWidget({super.key});
+  final bool compact;
+
+  const LanguageToggleWidget({super.key, this.compact = false});
 
   static const List<Map<String, String>> languages = [
+    {'code': 'as', 'label': 'Assamese', 'native': 'অসমীয়া', 'sub': 'Assam • North-East'},
+    {'code': 'bn', 'label': 'Bengali', 'native': 'বাংলা', 'sub': 'Tripura & Barak • North-East'},
+    {'code': 'brx', 'label': 'Bodo', 'native': 'बर\' / बड़ो', 'sub': 'Bodoland • North-East'},
+    {'code': 'mni', 'label': 'Manipuri', 'native': 'মৈতৈলোন্', 'sub': 'Manipur • North-East'},
+    {'code': 'lus', 'label': 'Mizo', 'native': 'Mizo ṭawng', 'sub': 'Mizoram • North-East'},
     {'code': 'en', 'label': 'English', 'native': 'English', 'sub': 'Standard'},
-    {'code': 'as', 'label': 'Assamese', 'native': 'অসমীয়া', 'sub': 'North East'},
     {'code': 'hi', 'label': 'Hindi', 'native': 'हिंदी', 'sub': 'National'},
   ];
 
   String _getCurrentDisplay(String code) {
+    if (compact) {
+      switch (code) {
+        case 'as':
+          return 'AS';
+        case 'bn':
+          return 'BN';
+        case 'brx':
+          return 'BRX';
+        case 'mni':
+          return 'MNI';
+        case 'lus':
+          return 'MIZ';
+        case 'hi':
+          return 'HI';
+        case 'en':
+        default:
+          return 'EN';
+      }
+    }
     switch (code) {
       case 'as':
         return 'অসমীয়া';
+      case 'bn':
+        return 'বাংলা';
+      case 'brx':
+        return 'बर\'';
+      case 'mni':
+        return 'মৈতৈলোন্';
+      case 'lus':
+        return 'Mizo';
       case 'hi':
         return 'हिंदी';
       case 'en':
@@ -30,13 +63,17 @@ class LanguageToggleWidget extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.backgroundWarm,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 12.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,80 +106,89 @@ class LanguageToggleWidget extends StatelessWidget {
                   'The entire application will immediately update to your preferred language.',
                   style: AppTypography.caregiverBody,
                 ),
-                const SizedBox(height: 18),
-                ...languages.map((lang) {
-                  final isSelected = AppStrings.currentLanguage == lang['code'];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: InkWell(
-                      onTap: () {
-                        AppStrings.setLanguage(lang['code']!);
-                        Navigator.of(ctx).pop();
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.surfaceWarm : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
-                            width: isSelected ? 2.0 : 1.0,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                              color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lang['native']!,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${lang['label']} (${lang['sub']})',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (isSelected)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...languages.map((lang) {
+                          final isSelected = AppStrings.currentLanguage == lang['code'];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10.0),
+                            child: InkWell(
+                              onTap: () {
+                                AppStrings.setLanguage(lang['code']!);
+                                Navigator.of(ctx).pop();
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.forestPrimary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Active',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.forestPrimary,
+                                  color: isSelected ? AppColors.surfaceWarm : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.forestPrimary : AppColors.borderSoft,
+                                    width: isSelected ? 2.0 : 1.0,
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                      color: isSelected ? AppColors.forestPrimary : AppColors.textTertiary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lang['native']!,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${lang['label']} (${lang['sub']})',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.forestPrimary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Text(
+                                          'Active',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.forestPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                          ],
-                        ),
-                      ),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
-                  );
-                }),
-                const SizedBox(height: 10),
+                  ),
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ),
@@ -162,7 +208,10 @@ class LanguageToggleWidget extends StatelessWidget {
             onTap: () => _showLanguageDialog(context),
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 8 : 12,
+                vertical: compact ? 6 : 8,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -181,26 +230,28 @@ class LanguageToggleWidget extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.language,
-                    size: 18,
+                    size: compact ? 16 : 18,
                     color: AppColors.forestPrimary,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: compact ? 4 : 6),
                   Text(
                     _getCurrentDisplay(currentLang),
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: compact ? 12 : 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.forestPrimary,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 18,
-                    color: AppColors.forestPrimary,
-                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: AppColors.forestPrimary,
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -41,33 +41,33 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.forestPrimary,
           foregroundColor: AppColors.textOnPrimary,
-          minimumSize: const Size(double.infinity, 62),
+          minimumSize: const Size(64, 48),
           elevation: 3,
           shadowColor: AppColors.forestPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           textStyle: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.forestPrimary,
-          minimumSize: const Size(double.infinity, 62),
+          minimumSize: const Size(64, 48),
           side: const BorderSide(color: AppColors.forestPrimary, width: 2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           textStyle: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.forestPrimary,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
       cardTheme: CardThemeData(

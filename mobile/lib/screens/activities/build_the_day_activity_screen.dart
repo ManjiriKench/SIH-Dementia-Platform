@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/safety/game_safety_manager.dart';
 import '../../services/profile_service.dart';
 import '../../services/session_service.dart';
 import '../../widgets/common/calm_card.dart';
@@ -40,6 +41,7 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
   late List<RoutineStepItem> _currentSequence;
   bool _isVerifiedCorrect = false;
   String? _feedbackMessage;
+  late final GameSafetyManager _safetyManager;
 
   List<RoutineStepItem> _masterRoutine = [];
 
@@ -78,8 +80,27 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
   void initState() {
     super.initState();
     SessionService.instance.startActivityByTitle(activityTitle: 'Build the Day Together');
+    _safetyManager = GameSafetyManager(
+      activityTitle: 'Build the Day Together',
+      onEndGameGracefully: _finishActivity,
+      onAutoSkip: _caregiverAutoAssist,
+    );
+    _safetyManager.onQuestionStart();
     _loadRoutineAnchors();
     _initShuffledSequence();
+  }
+
+  @override
+  void dispose() {
+    _safetyManager.dispose();
+    super.dispose();
+  }
+
+  void _onSkipPressed() {
+    final ended = _safetyManager.handleSkip();
+    if (!ended) {
+      _caregiverAutoAssist();
+    }
   }
 
   void _loadRoutineAnchors() {
@@ -179,6 +200,7 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
     setState(() {
       _isVerifiedCorrect = isCorrect;
       if (isCorrect) {
+        _safetyManager.onAnswerCorrect();
         final firstTitle = _masterRoutine.isNotEmpty ? _masterRoutine.first.title : 'morning';
         final lastTitle = _masterRoutine.isNotEmpty ? _masterRoutine.last.title : 'evening';
         _feedbackMessage = 'A wonderful rhythm! Your day flows peacefully from $firstTitle to $lastTitle.';
@@ -220,8 +242,15 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
         backgroundColor: AppColors.backgroundWarm,
         elevation: 0,
         leading: const ExitActivityButton(),
-        leadingWidth: 160,
-        title: const Text('Build the Day Together', style: AppTypography.caregiverSubheading),
+        leadingWidth: 88,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('Build the Day Together', style: AppTypography.caregiverSubheading),
+        ),
+        actions: const [
+          GuideModeSpeakerBadge(),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -364,6 +393,15 @@ class _BuildTheDayActivityScreenState extends State<BuildTheDayActivityScreen> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 14),
+
+              Center(
+                child: SkipQuestionButton(
+                  onSkip: _onSkipPressed,
+                  label: 'Skip / Let Caregiver Arrange',
+                ),
               ),
 
               const SizedBox(height: 14),

@@ -5,6 +5,7 @@ import '../../core/navigation/app_routes.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/common/elder_button.dart';
 import '../../widgets/common/language_toggle_widget.dart';
+import '../../widgets/common/voice_companion_bubble.dart';
 
 /// Warm, welcoming caregiver intro.
 /// No clutter. A single heartfelt message, three simple bullets, one big button.
@@ -37,7 +38,7 @@ class CaregiverWelcomeScreen extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pushNamed('/backend_test'),
                       ),
                       const SizedBox(width: 4),
-                      const LanguageToggleWidget(),
+                      const LanguageToggleWidget(compact: true),
                     ],
                   ),
                 ],
@@ -165,7 +166,15 @@ class CaregiverWelcomeScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
+
+                    // Voice Companion Guide Mode Banner
+                    const VoiceCompanionBubble(
+                      contextualHint:
+                          'Namaskar! Welcome to Smriti. I am your spoken companion. If you enable Voice Guide, I will read every question aloud, give hints, and celebrate your loved one throughout their journey.',
+                    ),
+
+                    const SizedBox(height: 20),
 
                     // Three benefit bullets in a warm card
                     Container(
